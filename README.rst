@@ -3,15 +3,19 @@ pyRogue
 =======
 
 :date: 2018-12-17
-:modified: 2018-12-26
+:modified: 2020-04-04
 :status: tutorial
-:version: $Id: README.rst 1.1 $
+:version: $Id: README.rst 1.2 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
-Results from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 tutorial.
+Results from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
+
+``tdl is now deprecated.``
 
 Chapters:
 =========
+
+They were used to test code, chapter by chapter.
 
 * rogue_test00.py
 * rogue_test01.py
@@ -32,5 +36,10 @@ Chapters:
 Result:
 =======
 
-Playable.
+Playable. May need ``libsdl2-dev`` installed.
 
+.. figure:: pyrogue_screen.png
+   :alt: pyRogue screenshot (level 1)
+   :height: 641px
+   :width: 976px
+   :align: center
