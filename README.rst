@@ -4,22 +4,26 @@ pyRogue
 
 :date: 2018-12-17
 :modified: 2020-04-04
-:status: tutorial
-:version: $Id: README.rst 1.6 $
+:status: tutorial, playable
+:version: $Id: README.rst 1.7 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
 Results from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
-Warning: ``tdl module is now deprecated.``, need ``libsdl2-dev`` installed. See TODO.
+Warning: ``tdl module is now deprecated.``, need ``libsdl2-dev`` installed. 
+
+There's room for lots and lots of improvements. See TODO.
 
 Game:
 =====
 
-Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can.
+Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
 
 It's a rogue game. You will die soon, or sooner. And you'll start all over again.
 
-.. figure:: pyRogue/pyrogue_screen.png
+``There's nothing to find, apart from wretched death...``
+
+.. figure:: pyrogue_screenshot.png
    :alt: pyRogue screenshot (level 1)
    :height: 641px
    :width: 976px
@@ -27,27 +31,34 @@ It's a rogue game. You will die soon, or sooner. And you'll start all over again
 
 
 Controls:
-
-* 'arrows' to move and attack
+* 'arrows' to move and attack (no diagonals)
 * 'g': grab thing
 * 'i': show inventory
 * 'x': show player's statistics
 * '<': go downstairs (one way, there is no turning back!)
 * 'ESC' to quit (or 'c' at main menu)
 
-Current state will be saved, if you quit.
+Display:
+* '@': you
+* 'A': any capital letter is the name of the room
+* '+': a potion
+* '#": a scroll
+* 'o': an Orc
+* 'T': a Troll
+* '/': a sword
+* '[': a shield
+* '<': stairs, they go deeper...
 
-``There's nothing to find, apart from wretched death...``
-
+Current state will be saved (savegame.db), if you quit.
 
 What's in chapters:
 ===================
 
-Code snipsets. They were used to test code, for each tutorial's chapter.
+Code snipsets. They were used to test code, from each tutorial's chapter.
 
 * dejavu10x10_gs_tc.png   <- font, as image
 * dundalk12x12_gs_tc.png  <- another font, also as image
-* menu_background1.png    <- a image for the menu (from http://roguecentral.org/doryen )
+* menu_background1.png    <- image for the menu (from http://roguecentral.org/doryen )
 * roguecolors.py          <- color definitions
 * rogue_test00.py
 * rogue_test01.py

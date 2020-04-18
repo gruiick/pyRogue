@@ -1,5 +1,13 @@
 
-$Id: TODO 3 $
+$Id: TODO 4 $
 
 * remove tdl, as it's deprecated, and switch to pure libtcod:
   https://github.com/libtcod/python-tcod
+
+* move all CONSTANTS to a separate file
+
+* improve use of colors (roguecolors was good following the tutorial, but now, move to something simpler)
+    * themes ? greyscale, high contrast for color impaired, dark, light ?
+
+* generalize place_objects()
+    * items and monsters definition should be in a separate 'configuration' file
