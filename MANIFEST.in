@@ -1,7 +1,4 @@
 include LICENSE
 include pyRogue/dundalk12x12_gs_tc.png
 include pyRogue/menu_background1.png
-include pyRogue/chapters/dejavu10x10_gs_tc.png
-include pyRogue/chapters/dundalk12x12_gs_tc.png
-include pyRogue/chapters/menu_background1.png
 include pyRogue/pyrogue_screen.png
