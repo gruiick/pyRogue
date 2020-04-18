@@ -5,21 +5,21 @@ pyRogue
 :date: 2018-12-17
 :modified: 2020-04-04
 :status: tutorial
-:version: $Id: README.rst 1.5 $
+:version: $Id: README.rst 1.6 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
 Results from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
-Warning: ``tdl module is now deprecated.``, need ``libsdl2-dev`` installed.
+Warning: ``tdl module is now deprecated.``, need ``libsdl2-dev`` installed. See TODO.
 
 Game:
 =====
 
-Playable and 'Fun'. Don't overthink. Flee, avoid, run away. Grab, use and try to survive as long as you can.
+Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can.
 
 It's a rogue game. You will die soon, or sooner. And you'll start all over again.
 
-.. figure:: pyrogue_screen.png
+.. figure:: pyRogue/pyrogue_screen.png
    :alt: pyRogue screenshot (level 1)
    :height: 641px
    :width: 976px
@@ -31,8 +31,11 @@ Controls:
 * 'arrows' to move and attack
 * 'g': grab thing
 * 'i': show inventory
+* 'x': show player's statistics
 * '<': go downstairs (one way, there is no turning back!)
 * 'ESC' to quit (or 'c' at main menu)
+
+Current state will be saved, if you quit.
 
 ``There's nothing to find, apart from wretched death...``
 
@@ -42,6 +45,10 @@ What's in chapters:
 
 Code snipsets. They were used to test code, for each tutorial's chapter.
 
+* dejavu10x10_gs_tc.png   <- font, as image
+* dundalk12x12_gs_tc.png  <- another font, also as image
+* menu_background1.png    <- a image for the menu (from http://roguecentral.org/doryen )
+* roguecolors.py          <- color definitions
 * rogue_test00.py
 * rogue_test01.py
 * rogue_test02.2.py
