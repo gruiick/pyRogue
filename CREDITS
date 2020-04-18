@@ -1,0 +1,11 @@
+# $Id: CREDITS 2 $
+# SPDX-License-Identifier: BSD-2-Clause
+
+Credits for python2/3 rogue tutorial(s) and game(s):
+
+* RogueBasin wiki: http://www.roguebasin.com/
+
+* all the folks in the libtcod forums
+  http://www.roguebasin.com/
+
+* https://github.com/libtcod/python-tcod

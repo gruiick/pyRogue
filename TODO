@@ -1,0 +1,12 @@
+
+$Id: TODO 2 $
+
+while dup is PR'ing:
+
+OK cp roguecolors.py to chapters
+OK add 'x' (show player info) to README.rst
+OK add 'savegame' possibility to README.rst
+OK add AUTHORS & CREDITS
+
+remove tdl, as it's deprecated, and switch to pure libtcod:
+https://github.com/libtcod/python-tcod
