@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: pyrogue.py 894 $
+# $Id: pyrogue.py 895 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
@@ -12,7 +12,7 @@ import textwrap
 import shelve
 import tdl
 from tcod import image_load
-import pyRogue.roguecolors as roguecolors
+import roguecolors
 
 
 """
