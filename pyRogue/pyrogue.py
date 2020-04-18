@@ -5,18 +5,21 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
-"""
-    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_13
-    Adventure gear, basic equipment, equipement polish
-"""
-
-import tdl
-from tcod import image_load
+import pkg_resources
 from random import randint
 import math
 import textwrap
 import shelve
-import roguecolors
+import tdl
+from tcod import image_load
+import pyRogue.roguecolors as roguecolors
+
+
+"""
+    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_13
+    Adventure gear, basic equipment, equipment polish
+"""
+
 
 # actual size of the window
 SCREEN_WIDTH = 80
@@ -67,6 +70,15 @@ color_light_wall = roguecolors.light_grey
 color_dark_ground = roguecolors.darkest_sepia
 color_light_ground = roguecolors.dark_sepia
 
+##################################
+# GUI initialization & Main Loop #
+##################################
+
+tdl.set_font(pkg_resources.resource_filename(__name__, 'dundalk12x12_gs_tc.png'), greyscale=True, altLayout=True)
+root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False)
+tdl.set_fps(LIMIT_FPS)
+con = tdl.Console(MAP_WIDTH, MAP_HEIGHT)
+panel = tdl.Console(SCREEN_WIDTH, PANEL_HEIGHT)
 
 class BasicMonster:
     """
@@ -1439,15 +1451,10 @@ def target_tile(max_range=None):
            (max_range is None or player.distance(x, y) <= max_range)):
             return mouse_coord
 
+def main():
+    main_menu()
 
-##################################
-# GUI initialization & Main Loop #
-##################################
 
-tdl.set_font('dundalk12x12_gs_tc.png', greyscale=True, altLayout=True)
-root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False)
-tdl.set_fps(LIMIT_FPS)
-con = tdl.Console(MAP_WIDTH, MAP_HEIGHT)
-panel = tdl.Console(SCREEN_WIDTH, PANEL_HEIGHT)
+if __name__ == "__main__":
+    main()
 
-main_menu()
