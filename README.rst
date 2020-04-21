@@ -5,7 +5,7 @@ pyRogue
 :date: 2018-12-17
 :modified: 2020-04-04
 :status: tutorial, playable
-:version: $Id: README.rst 1.7 $
+:version: $Id: README.rst 1.8 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
 Results from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
@@ -31,6 +31,7 @@ It's a rogue game. You will die soon, or sooner. And you'll start all over again
 
 
 Controls:
+
 * 'arrows' to move and attack (no diagonals)
 * 'g': grab thing
 * 'i': show inventory
@@ -39,6 +40,7 @@ Controls:
 * 'ESC' to quit (or 'c' at main menu)
 
 Display:
+
 * '@': you
 * 'A': any capital letter is the name of the room
 * '+': a potion
