@@ -3,19 +3,19 @@ pyRogue
 =======
 
 :date: 2018-12-17
-:modified: 2020-04-04
+:modified: 2021-05-28
 :status: tutorial, playable
-:version: $Id: README.rst 1.8 $
+:version: $Id: README.rst 1.10 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
-Results from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
+This is a little *Rogue-like* game, from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
 Warning: ``tdl module is now deprecated.``, need ``libsdl2-dev`` installed. 
 
-There's room for lots and lots of improvements. See TODO.
+There's room for lots and lots of improvements. See TODO. Opensource licence, feel free to fork and PR back.
 
-Game:
-=====
+Rogue Game:
+===========
 
 Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
 
@@ -56,7 +56,7 @@ Current state will be saved (savegame.db), if you quit.
 What's in chapters:
 ===================
 
-Code snipsets. They were used to test code, from each tutorial's chapter.
+Code snippets. They were used to test code, from each tutorial's chapter.
 
 * dejavu10x10_gs_tc.png   <- font, as image
 * dundalk12x12_gs_tc.png  <- another font, also as image
