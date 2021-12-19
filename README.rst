@@ -2,10 +2,12 @@
 pyRogue
 =======
 
-:date: 2018-12-17
-:modified: 2021-05-28
+.. meta::
+    :date: 2018-12-17
+    :modified: 2021-05-28
+
 :status: tutorial, playable
-:version: $Id: README.rst 1.10 $
+:version: $Id: README.rst 1.11 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
