@@ -12,7 +12,7 @@ pyRogue
 
 This is a little *Rogue-like* game, from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
-Warning: ``tdl module is now deprecated.``, need ``libsdl2-dev`` installed. 
+Warning: ``tdl module is now deprecated.``, need ``libffi-dev``, ``libsdl2-dev`` installed. 
 
 There's room for lots and lots of improvements. See TODO. Opensource licence, feel free to fork and PR back.
 
