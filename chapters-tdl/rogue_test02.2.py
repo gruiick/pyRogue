@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test02.py 894 $
+# $Id: rogue_test02.2.py 895 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
@@ -17,32 +17,62 @@ SCREEN_HEIGHT = 50
 REALTIME = False
 LIMIT_FPS = 20  # 20 frames-per-second maximum, for realtime mode
 
+MAP_WIDTH = 80
+MAP_HEIGHT = 45
+
+color_dark_wall = (0, 0, 100)
+color_dark_ground = (50, 50, 150)
+
+
+class Tile:
+    """
+        a tile of the map with its properties
+    """
+    def __init__(self, blocked, block_sight=None):
+        """ """
+        self.blocked = blocked
+
+        # by default, if a tile is blocked, it also blocks sight
+        if block_sight is None:
+            block_sight = blocked
+        self.block_sight = block_sight
+
 
 class GameObject:
-    # this is a generic object: the player, a monster, an item, the stairs...
-    # it's always represented by a character on screen.
+    """
+        this is a generic object: the player, a monster, an item, stairs...
+        it's always represented by a character on screen.
+    """
     def __init__(self, x, y, char, color):
+        """ """
         self.x = x
         self.y = y
         self.char = char
         self.color = color
 
     def move(self, dx, dy):
-        # move by the given amount
-        self.x += dx
-        self.y += dy
+        """
+            move by the given amount, if the destination is not blocked
+        """
+        if not my_map[self.x + dx][self.y + dy].blocked:
+            self.x += dx
+            self.y += dy
 
     def draw(self):
-        # draw the character that represents this object at its position
+        """
+            draw the character that represents this object at its position
+        """
         con.draw_char(self.x, self.y, self.char, self.color, bg=None)
 
     def clear(self):
-        # erase the character that represents this object
+        """
+            erase the character that represents this object
+        """
         con.draw_char(self.x, self.y, ' ', self.color, bg=None)
 
 
 def handle_keys(realtime):
-
+    """ """
     if realtime:
         keypress = False
         for event in tdl.event.get():
@@ -73,6 +103,42 @@ def handle_keys(realtime):
         player.move(1, 0)
 
 
+def make_map():
+    """ """
+    global my_map
+
+    # fill map with "unblocked" tiles
+    # via comprehension list
+    my_map = [[Tile(False)
+               for y in range(MAP_HEIGHT)]
+              for x in range(MAP_WIDTH)]
+
+    # place two 'pillar', for test
+    my_map[30][22].blocked = True
+    my_map[30][22].block_sight = True
+    my_map[50][22].blocked = True
+    my_map[50][22].block_sight = True
+
+
+def render_all():
+    """ """
+    # go through all tiles, and set their background color
+    for y in range(MAP_HEIGHT):
+        for x in range(MAP_WIDTH):
+            wall = my_map[x][y].block_sight
+            if wall:
+                con.draw_char(x, y, None, fg=None, bg=color_dark_wall)
+            else:
+                con.draw_char(x, y, None, fg=None, bg=color_dark_ground)
+
+    # draw all objects in the list
+    for obj in objects:
+        obj.draw()
+
+    # blit the contents of "con" to the root console and present it
+    root.blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0)
+
+
 ##############################
 # Initialization & Main Loop #
 ##############################
@@ -86,14 +152,13 @@ player = GameObject(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, '@', (255, 255, 255))
 npc = GameObject(SCREEN_WIDTH // 2 - 5, SCREEN_HEIGHT // 2, '@', (255, 255, 0))
 objects = [npc, player]
 
-while not tdl.event.is_window_closed():
-    print('go')
-    # draw all objects in the list
-    for obj in objects:
-        obj.draw()
+# generate map (at this point it's not drawn to the screen)
+make_map()
 
-    # blit the contents of "con" to the root console and present it
-    root.blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0)
+while not tdl.event.is_window_closed():
+    # draw all objects in the list
+    render_all()
+
     tdl.flush()
 
     # erase all objects at their old locations, before they move

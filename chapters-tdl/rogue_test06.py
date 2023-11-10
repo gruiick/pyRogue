@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test08.py 894 $
+# $Id: rogue_test06.py 895 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
 """
-    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_8
-    Items and Inventory
+    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_6
 """
 
 import tdl
 from random import randint
 import math
-import textwrap
 import roguecolors
 
 # actual size of the window
@@ -22,67 +20,26 @@ SCREEN_HEIGHT = 50
 
 # size of the map
 MAP_WIDTH = 80
-MAP_HEIGHT = 43
-
-# sizes and coordinates relevant for the GUI
-BAR_WIDTH = 20
-PANEL_HEIGHT = 7
-PANEL_Y = SCREEN_HEIGHT - PANEL_HEIGHT
-MSG_X = BAR_WIDTH + 2
-MSG_WIDTH = SCREEN_WIDTH - BAR_WIDTH - 2
-MSG_HEIGHT = PANEL_HEIGHT - 1
-INVENTORY_WIDTH = 50
+MAP_HEIGHT = 45
 
 # parameters for dungeon generator
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
 MAX_ROOM_MONSTERS = 3
-MAX_ROOM_ITEMS = 2
-HEAL_AMOUNT = 4
 
 # FOV algorithm, can be BASIC, DIAMOND, SHADOW, PERMISSIVE0 to 9
 FOV_ALGO = 'BASIC'
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
-LIMIT_FPS = 20  # 20 frames-per-second maximum
+REALTIME = False
+LIMIT_FPS = 20  # 20 frames-per-second maximum, for realtime mode
 
 color_dark_wall = roguecolors.darkest_grey
 color_light_wall = roguecolors.light_grey
 color_dark_ground = roguecolors.darkest_sepia
 color_light_ground = roguecolors.dark_sepia
-
-
-class Item:
-    """
-        an item that can be picked up and used.
-    """
-    def __init__(self, use_function=None):
-        self.use_function = use_function
-
-    def pick_up(self):
-        """
-            add to the player's inventory and remove from the map
-        """
-        if len(inventory) >= 26:
-            message('Your inventory is full, cannot pick up ' +
-                    self.owner.name + '.', roguecolors.red)
-        else:
-            inventory.append(self.owner)
-            objects.remove(self.owner)
-            message('You picked up a ' + self.owner.name + '!',
-                    roguecolors.green)
-
-    def use(self):
-        """
-            just call the "use_function" if it is defined
-        """
-        if self.use_function is None:
-            message('The ' + self.owner.name + ' cannot be used.')
-        else:
-            if self.use_function() != 'cancelled':
-                inventory.remove(self.owner)  # destroy after use, unless it was cancelled for some reason
 
 
 class Fighter:
@@ -113,18 +70,12 @@ class Fighter:
 
         if damage > 0:
             # make the target take some damage
-            message(self.owner.name.capitalize() + ' attacks ' +
-                    target.name + ' for ' + str(damage) + ' hit points.')
+            print(self.owner.name.capitalize() + ' attacks ' +
+                  target.name + ' for ' + str(damage) + ' hit points.')
             target.fighter.take_damage(damage)
         else:
-            message(self.owner.name.capitalize() + ' attacks ' +
-                    target.name + ' but it has no effect!')
-
-    def heal(self, amount):
-        # heal by the given amount, without going over the maximum
-        self.hp += amount
-        if self.hp > self.max_hp:
-            self.hp = self.max_hp
+            print(self.owner.name.capitalize() + ' attacks ' +
+                  target.name + ' but it has no effect!')
 
 
 class BasicMonster:
@@ -143,6 +94,8 @@ class BasicMonster:
             # close enough, attack! (if the player is still alive.)
             elif player.fighter.hp > 0:
                 monster.fighter.attack(player)
+                # print('The attack of the ' + monster.name +
+                #       ' bounces off your shiny metal armor!')
 
 
 class Tile:
@@ -187,7 +140,7 @@ class GameObject:
         it's always represented by a character on screen.
     """
     def __init__(self, x, y, char, name, color, blocks=False,
-                 fighter=None, ai=None, item=None):
+                 fighter=None, ai=None):
         """ """
         self.x = x
         self.y = y
@@ -195,7 +148,6 @@ class GameObject:
         self.name = name
         self.color = color
         self.blocks = blocks
-
         self.fighter = fighter
         if self.fighter:  # let the fighter component know who owns it
             self.fighter.owner = self
@@ -203,10 +155,6 @@ class GameObject:
         self.ai = ai
         if self.ai:  # let the autonomous component know who owns it
             self.ai.owner = self
-
-        self.item = item
-        if self.item:  # let the Item component know who owns it
-            self.item.owner = self
 
     def move(self, dx, dy):
         """
@@ -271,7 +219,7 @@ def player_death(player):
         the game ended!
     """
     global game_state
-    message('You died!', roguecolors.red)
+    print('You died!')
     game_state = 'dead'
 
     # for added effect, transform the player into a corpse!
@@ -284,7 +232,7 @@ def monster_death(monster):
         transform it into a nasty corpse! it doesn't block, can't be
         attacked and doesn't move
     """
-    message(monster.name.capitalize() + ' is dead!', roguecolors.orange)
+    print(monster.name.capitalize() + ' is dead!')
     monster.char = '%'
     monster.color = roguecolors.dark_red
     monster.blocks = False
@@ -315,8 +263,8 @@ def place_objects(room):
 
     for i in range(num_monsters):
         # choose random spot for this monster
-        x = randint(room.x1 + 1, room.x2 - 1)
-        y = randint(room.y1 + 1, room.y2 - 1)
+        x = randint(room.x1, room.x2)
+        y = randint(room.y1, room.y2)
 
         # only place it if the tile is not blocked
         if not is_blocked(x, y):
@@ -340,24 +288,6 @@ def place_objects(room):
                                      ai=ai_component)
 
             objects.append(monster)
-
-    # choose random number of items
-    num_items = randint(0, MAX_ROOM_ITEMS)
-
-    for i in range(num_items):
-        # choose random spot for this item
-        x = randint(room.x1 + 1, room.x2 - 1)
-        y = randint(room.y1 + 1, room.y2 - 1)
-
-        # only place it if the tile is not blocked
-        if not is_blocked(x, y):
-            # create a healing potion
-            item_component = Item(use_function=cast_heal)
-            item = GameObject(x, y, '+', 'healing potion', roguecolors.red,
-                              item=item_component)
-
-            objects.append(item)
-            item.send_to_background()  # items appear below other objects
 
 
 def create_room(room):
@@ -444,11 +374,11 @@ def make_map():
             (new_x, new_y) = new_room.center()
             # optional: print "room number" to see how the map drawing
             # worked. We may have more than ten rooms, so use alphabet
-            roomnumber = 'Room number'
-            number = chr(65 + num_rooms)
-            room_name = GameObject(new_x, new_y, number,
-                                   roomnumber, roguecolors.gold,
+            # TODO: room name should'nt block
+            room_name = GameObject(new_x, new_y, chr(65 + num_rooms),
+                                   'name', roguecolors.gold,
                                    blocks=False, fighter=None, ai=None)
+            room_name.blocks = False
             # draw early, so everything else is drawn on top
             objects.insert(0, room_name)
 
@@ -524,26 +454,9 @@ def render_all():
             obj.draw()
     player.draw()
 
-    # prepare to render the GUI panel
-    panel.clear(fg=roguecolors.white, bg=roguecolors.dark_grey)
-
-    # print the game messages, one line at a time
-    y = 1
-    for (line, color) in game_msgs:
-        panel.draw_str(MSG_X, y, line, bg=None, fg=color)
-        y += 1
-
     # show the player's stats
-    render_bar(1, 1, BAR_WIDTH, 'Health', player.fighter.hp,
-               player.fighter.max_hp, roguecolors.light_red,
-               roguecolors.darker_red)
-
-    # display names of objects under the mouse
-    panel.draw_str(1, 0, get_names_under_mouse(), bg=None,
-                   fg=roguecolors.light_gray)
-
-    # blit the contents of "panel" to the root console
-    root.blit(panel, 0, PANEL_Y, SCREEN_WIDTH, PANEL_HEIGHT, 0, 0)
+    con.draw_str(1, SCREEN_HEIGHT - 2, 'HP: ' + str(player.fighter.hp) +
+                 '/' + str(player.fighter.max_hp) + ' ')
 
     # blit the contents of "con" to the root console and present it
     root.blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0)
@@ -567,92 +480,28 @@ def player_move_or_attack(dx, dy):
     # attack if target found, move otherwise
     if target is not None:
         player.fighter.attack(target)
+        # print('The ' + target.name + ' laughs at your puny efforts to
+        # attack him!')
     else:
         player.move(dx, dy)
         fov_recompute = True
 
 
-def menu(header, options, width):
-    """ """
-    if len(options) > 26:
-        raise ValueError('Cannot have a menu with more than 26 options.')
-
-    # calculate total height for the header (after textwrap) and one
-    # line per option
-    header_wrapped = []
-    for header_line in header.splitlines():
-        header_wrapped.extend(textwrap.wrap(header_line, width))
-    header_height = len(header_wrapped)
-    height = len(options) + header_height
-
-    # create an off-screen console that represents the menu's window
-    window = tdl.Console(width, height)
-
-    # print the header, with wrapped text
-    window.draw_rect(0, 0, width, height, None, fg=roguecolors.white, bg=None)
-    for i, line in enumerate(header_wrapped):
-        window.draw_str(0, 0 + i, header_wrapped[i])
-
-    y = header_height
-    letter_index = ord('a')
-    for option_text in options:
-        text = '(' + chr(letter_index) + ') ' + option_text
-        window.draw_str(0, y, text, bg=None)
-        y += 1
-        letter_index += 1
-
-    # blit the contents of "window" to the root console
-    x = SCREEN_WIDTH // 2 - width // 2
-    y = SCREEN_HEIGHT // 2 - height // 2
-    root.blit(window, x, y, width, height, 0, 0)
-
-    # present the root console to the player and wait for a key-press
-    tdl.flush()
-    key = tdl.event.key_wait()
-    key_char = key.char
-    if key_char == '':
-        key_char = ' '  # placeholder
-
-    # convert the ASCII code to an index; if it corresponds to an
-    # option, return it
-    index = ord(key_char) - ord('a')
-    if index >= 0 and index < len(options):
-        return index
-    return None
-
-
-def inventory_menu(header):
-    """
-        show a menu with each item of the inventory as an option
-    """
-    if len(inventory) == 0:
-        options = ['Inventory is empty.']
-    else:
-        options = [item.name for item in inventory]
-
-    index = menu(header, options, INVENTORY_WIDTH)
-
-    # if an item was chosen, return it
-    if index is None or len(inventory) == 0:
-        return None
-    return inventory[index].item
-
-
 def handle_keys():
     """ """
     global fov_recompute
-    global mouse_coord
 
-    keypress = False
-    for event in tdl.event.get():
-        if event.type == 'KEYDOWN':
-            user_input = event
-            keypress = True
-        if event.type == 'MOUSEMOTION':
-            mouse_coord = event.cell
+    if REALTIME:
+        keypress = False
+        for event in tdl.event.get():
+            if event.type == 'KEYDOWN':
+                user_input = event
+                keypress = True
+        if not keypress:
+            return
 
-    if not keypress:
-        return 'didnt-take-turn'
+    else:  # turn-based
+        user_input = tdl.event.key_wait()
 
     if user_input.key == 'ENTER' and user_input.alt:
         # Alt+Enter: toggle fullscreen
@@ -676,99 +525,17 @@ def handle_keys():
             player_move_or_attack(1, 0)
 
         else:
-            # test for other keys
-            if user_input.text == 'g':
-                # pick up an item
-                for obj in objects:  # look for an item in the player's tile
-                    if obj.x == player.x and obj.y == player.y and obj.item:
-                        obj.item.pick_up()
-                        break
-
-            if user_input.text == 'i':
-                # show the inventory; if an item is selected, use it
-                chosen_item = inventory_menu('Press the key next to an item to use it, or any other to cancel.\n')
-                if chosen_item is not None:
-                    chosen_item.use()
-
             return 'didnt-take-turn'
 
 
-def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
-    """
-        render a bar (HP, experience, etc).
-    """
-    # first calculate the width of the bar
-    bar_width = int(float(value) / maximum * total_width)
-
-    # render the background first
-    panel.draw_rect(x, y, total_width, 1, None, bg=back_color)
-
-    # now render the bar on top
-    if bar_width > 0:
-        panel.draw_rect(x, y, bar_width, 1, None, bg=bar_color)
-
-    # finally, some centered text with the values
-    text = name + ': ' + str(value) + '/' + str(maximum)
-    x_centered = x + (total_width - len(text)) // 2
-    panel.draw_str(x_centered, y, text, fg=roguecolors.white, bg=None)
-
-
-def message(new_msg, color=roguecolors.black):
-    """
-        prepare and splitline the messages
-    """
-    # split the message if necessary, among multiple lines
-    new_msg_lines = textwrap.wrap(new_msg, MSG_WIDTH)
-
-    for line in new_msg_lines:
-        # if the buffer is full, remove the first line to make room for
-        # the new one
-        if len(game_msgs) == MSG_HEIGHT:
-            del game_msgs[0]
-
-        # add the new line as a tuple, with the text and the color
-        game_msgs.append((line, color))
-
-
-def get_names_under_mouse():
-    """
-        return a string with the names of all objects under the mouse
-    """
-    global visible_tiles
-
-    (x, y) = mouse_coord
-
-    # create a list with the names of all objects at the mouse's
-    # coordinates and in FOV, via comprehension list
-    names = [obj.name for obj in objects
-             if obj.x == x and obj.y == y and (obj.x, obj.y)
-             in visible_tiles]
-
-    names = ', '.join(names)  # join the names, separated by commas
-    return names.capitalize()
-
-
-def cast_heal():
-    """
-        heal the player
-    """
-    if player.fighter.hp == player.fighter.max_hp:
-        message('You are already at full health.', roguecolors.red)
-        return 'cancelled'
-
-    message('Your wounds start to feel better!', roguecolors.light_violet)
-    player.fighter.heal(HEAL_AMOUNT)
-
-
-##################################
-# GUI initialization & Main Loop #
-##################################
+##############################
+# Initialization & Main Loop #
+##############################
 
 tdl.set_font('dundalk12x12_gs_tc.png', greyscale=True, altLayout=True)
 root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False)
 tdl.setFPS(LIMIT_FPS)
-con = tdl.Console(MAP_WIDTH, MAP_HEIGHT)
-panel = tdl.Console(SCREEN_WIDTH, PANEL_HEIGHT)
+con = tdl.Console(SCREEN_WIDTH, SCREEN_HEIGHT)
 
 # create object representing the player
 fighter_component = Fighter(hp=30, defense=2, power=5,
@@ -777,7 +544,6 @@ player = GameObject(0, 0, '@', 'player', roguecolors.white, blocks=True,
                     fighter=fighter_component)
 
 objects = [player]
-inventory = []
 
 # generate map (at this point it's not drawn to the screen)
 make_map()
@@ -785,15 +551,6 @@ make_map()
 fov_recompute = True
 game_state = 'playing'
 player_action = None
-
-# create the list of game messages and their colors, starts empty
-game_msgs = []
-
-# a warm welcoming message!
-message('Welcome stranger! Prepare to perish in the Catacombs of the Ancients.',
-        roguecolors.black)
-
-mouse_coord = (0, 0)
 
 while not tdl.event.is_window_closed():
     # draw all objects in the list

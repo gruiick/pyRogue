@@ -1,12 +1,6 @@
 # TODO list
 
-$Id: TODO.md 6 $
-
-## Stick to the tutorial
-
-* cleanup, add proper comments and docstrings
-
-* alphabetical sort of functions (as you care in most IDE?)
+$Id: TODO.md 7 $
 
 ## Escape from the tutorial
 
@@ -15,6 +9,9 @@ possibilities of evolutions.
 
 * remove tdl, as it's deprecated, and switch to pure libtcod:
   https://github.com/libtcod/python-tcod
+  follow http://rogueliketutorials.com/tutorials/tcod/v2/
+
+Then, maybe:
 
 * improve player's displacements (diags)
 

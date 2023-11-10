@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test09.py 894 $
+# $Id: rogue_test13.py 895 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
 """
-    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_9
-    Spells and ranged combat
+    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_13
+    Adventure gear, basic equipment, equipement polish
 """
 
 import tdl
+from tcod import image_load
 from random import randint
 import math
 import textwrap
+import shelve
 import roguecolors
 
 # actual size of the window
@@ -32,20 +34,26 @@ MSG_X = BAR_WIDTH + 2
 MSG_WIDTH = SCREEN_WIDTH - BAR_WIDTH - 2
 MSG_HEIGHT = PANEL_HEIGHT - 1
 INVENTORY_WIDTH = 50
+LEVEL_SCREEN_WIDTH = 40
+CHARACTER_SCREEN_WIDTH = 30
 
 # parameters for dungeon generator
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
-MAX_ROOM_MONSTERS = 3
-MAX_ROOM_ITEMS = 2
-HEAL_AMOUNT = 10
+
+# spell values
+HEAL_AMOUNT = 40
 LIGHTNING_RANGE = 5
-LIGHTNING_DAMAGE = 20
-CONFUSE_RANGE = 5
-CONFUSE_NUM_TURNS = 5
+LIGHTNING_DAMAGE = 40
+CONFUSE_RANGE = 8
+CONFUSE_NUM_TURNS = 10
 FIREBALL_RADIUS = 3
-FIREBALL_DAMAGE = 12
+FIREBALL_DAMAGE = 25
+
+# experience and level-ups
+LEVEL_UP_BASE = 200
+LEVEL_UP_FACTOR = 150
 
 # FOV algorithm, can be BASIC, DIAMOND, SHADOW, PERMISSIVE0 to 9
 FOV_ALGO = 'BASIC'
@@ -81,7 +89,51 @@ class ConfusedMonster:
             # restore the previous AI (this one will be deleted
             # because it's not referenced anymore)
             self.owner.ai = self.old_ai
-            message('The ' + self.owner.name + ' is no longer confused!', roguecolors.red)
+            message('The ' + self.owner.name + ' is no longer confused!',
+                    roguecolors.red)
+
+
+class Equipment:
+    """
+        an object that can be equipped, yielding bonuses. automatically
+        adds the Item component.
+    """
+    def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0):
+        self.power_bonus = power_bonus
+        self.defense_bonus = defense_bonus
+        self.max_hp_bonus = max_hp_bonus
+
+        self.slot = slot
+        self.is_equipped = False
+
+    def toggle_equip(self):  # toggle equip/dequip status
+        if self.is_equipped:
+            self.dequip()
+        else:
+            self.equip()
+
+    def equip(self):
+        """
+            equip object and show a message about it
+        """
+        # if the slot is already being used, dequip whatever is there first
+        old_equipment = get_equipped_in_slot(self.slot)
+        if old_equipment is not None:
+            old_equipment.dequip()
+
+        self.is_equipped = True
+        message('Equipped ' + self.owner.name + ' on ' + self.slot +
+                '.', roguecolors.light_green)
+
+    def dequip(self):
+        """
+            dequip object and show a message about it
+        """
+        if not self.is_equipped:
+            return
+        self.is_equipped = False
+        message('Dequipped ' + self.owner.name + ' from ' + self.slot +
+                '.', roguecolors.light_yellow)
 
 
 class Item:
@@ -103,6 +155,11 @@ class Item:
             objects.remove(self.owner)
             message('You picked up a ' + self.owner.name + '!',
                     roguecolors.green)
+            # special case: automatically equip, if the corresponding
+            # equipment slot is unused
+            equipment = self.owner.equipment
+            if equipment and get_equipped_in_slot(equipment.slot) is None:
+                equipment.equip()
 
     def drop(self):
         """
@@ -114,11 +171,21 @@ class Item:
         self.owner.x = player.x
         self.owner.y = player.y
         message('You dropped a ' + self.owner.name + '.', roguecolors.yellow)
+        # special case: if the object has the Equipment component, dequip
+        # it before dropping
+        if self.owner.equipment:
+            self.owner.equipment.dequip()
 
     def use(self):
         """
             just call the "use_function" if it is defined
         """
+        # special case: if the object has the Equipment component, the
+        # "use" action is to equip/dequip
+        if self.owner.equipment:
+            self.owner.equipment.toggle_equip()
+            return
+
         if self.use_function is None:
             message('The ' + self.owner.name + ' cannot be used.')
         else:
@@ -130,13 +197,41 @@ class Fighter:
     """
         combat-related properties and methods (monster, player, NPC)
     """
-    def __init__(self, hp, defense, power, death_function=None):
-        self.death_function = death_function
-        self.max_hp = hp
+    def __init__(self, hp, defense, power, xp, death_function=None):
+        self.base_max_hp = hp  # should be percentage
         self.hp = hp
-        self.defense = defense
-        self.power = power
+        self.base_defense = defense
+        self.base_power = power
+        self.max_xp = xp  # should be percentage
+        self.xp = xp
         self.death_function = death_function
+
+    @property
+    def power(self):
+        """
+            return actual power, by summing up the bonuses from all
+            equipped items
+        """
+        bonus = sum(equipment.power_bonus for equipment in get_all_equipped(self.owner))
+        return self.base_power + bonus
+
+    @property
+    def defense(self):
+        """
+            return actual defense, by summing up the bonuses from all
+            equipped items
+        """
+        bonus = sum(equipment.defense_bonus for equipment in get_all_equipped(self.owner))
+        return self.base_defense + bonus
+
+    @property
+    def max_hp(self):
+        """
+            return actual max_hp, by summing up the bonuses from all
+            equipped items
+        """
+        bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.owner))
+        return self.base_max_hp + bonus
 
     def take_damage(self, damage):
         # apply damage if possible
@@ -147,6 +242,8 @@ class Fighter:
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
+                if self.owner != player:  # yield experience to the player
+                    player.fighter.xp += self.xp
 
     def attack(self, target):
         # a simple formula for attack damage
@@ -228,7 +325,8 @@ class GameObject:
         it's always represented by a character on screen.
     """
     def __init__(self, x, y, char, name, color, blocks=False,
-                 fighter=None, ai=None, item=None):
+                 always_visible=False, fighter=None, ai=None, item=None,
+                 equipment=None):
         """ """
         self.x = x
         self.y = y
@@ -236,6 +334,7 @@ class GameObject:
         self.name = name
         self.color = color
         self.blocks = blocks
+        self.always_visible = always_visible
 
         self.fighter = fighter
         if self.fighter:  # let the fighter component know who owns it
@@ -247,6 +346,14 @@ class GameObject:
 
         self.item = item
         if self.item:  # let the Item component know who owns it
+            self.item.owner = self
+
+        self.equipment = equipment
+        if self.equipment:  # let the Equipment component know who owns it
+            self.equipment.owner = self
+            # there must be an Item component for the Equipment
+            # component to work properly
+            self.item = Item()
             self.item.owner = self
 
     def move(self, dx, dy):
@@ -299,11 +406,12 @@ class GameObject:
     def draw(self):
         """
             draw the character that represents this object at its position
-            only show if it's visible to the player
+            only show if it's visible to the player; or it's set to
+            "always visible" and on an explored tile
         """
-        global visible_tiles
+        global visible_tiles, my_map
 
-        if (self.x, self.y) in visible_tiles:
+        if (self.x, self.y) in visible_tiles or (self.always_visible and my_map[self.x][self.y].explored):
             con.draw_char(self.x, self.y, self.char, self.color, bg=None)
 
     def clear(self):
@@ -331,7 +439,9 @@ def monster_death(monster):
         transform it into a nasty corpse! it doesn't block, can't be
         attacked and doesn't move
     """
-    message(monster.name.capitalize() + ' is dead!', roguecolors.orange)
+    message(monster.name.capitalize() + ' is dead! You gain ' +
+            str(monster.fighter.xp) + ' experience points.',
+            roguecolors.orange)
     monster.char = '%'
     monster.color = roguecolors.dark_red
     monster.blocks = False
@@ -357,8 +467,16 @@ def is_blocked(x, y):
 
 def place_objects(room):
     """ """
+    # maximum number of monsters per room
+    max_monsters = from_dungeon_level([[2, 1], [3, 4], [5, 6]])
+
+    # chance of each monster
+    monster_chances = {}
+    monster_chances['orc'] = 80  # orc always shows up, even if all other monsters have 0 chance
+    monster_chances['troll'] = from_dungeon_level([[3, 15], [5, 30], [7, 60]])
+
     # choose random number of monsters
-    num_monsters = randint(0, MAX_ROOM_MONSTERS)
+    num_monsters = randint(0, max_monsters)
 
     for i in range(num_monsters):
         # choose random spot for this monster
@@ -367,29 +485,46 @@ def place_objects(room):
 
         # only place it if the tile is not blocked
         if not is_blocked(x, y):
-            if randint(0, 100) < 80:  # 80% chance of getting an orc
+            choice = random_choice(monster_chances)
+            if choice == 'orc':
                 # create an orc
-                fighter_component = Fighter(hp=5, defense=1, power=3,
+                fighter_component = Fighter(hp=20, defense=0, power=4, xp=35,
                                             death_function=monster_death)
                 ai_component = BasicMonster()
                 monster = GameObject(x, y, 'o', 'orc',
                                      roguecolors.light_green,
                                      blocks=True, fighter=fighter_component,
                                      ai=ai_component)
-            else:
+            elif choice == 'troll':
                 # create a troll
-                fighter_component = Fighter(hp=10, defense=2, power=4,
+                fighter_component = Fighter(hp=30, defense=2, power=8, xp=80,
                                             death_function=monster_death)
                 ai_component = BasicMonster()
                 monster = GameObject(x, y, 'T', 'troll',
                                      roguecolors.light_green,
                                      blocks=True, fighter=fighter_component,
                                      ai=ai_component)
+            else:
+                pass
 
             objects.append(monster)
 
+    # maximum number of items per room
+    max_items = from_dungeon_level([[1, 1], [4, 2]])
+
+    # chance of each item (by default they have a chance of 0 at
+    # level 1, which then goes up)
+    item_chances = {}
+    # healing potion always shows up, even if all other items have 0 chance
+    item_chances['heal'] = 35
+    item_chances['lightning'] = from_dungeon_level([[4, 25]])
+    item_chances['fireball'] = from_dungeon_level([[6, 25]])
+    item_chances['confuse'] = from_dungeon_level([[2, 10]])
+    item_chances['sword'] = from_dungeon_level([[2, 10]])
+    item_chances['shield'] = from_dungeon_level([[1, 10]])
+
     # choose random number of items
-    num_items = randint(0, MAX_ROOM_ITEMS)
+    num_items = randint(0, max_items)
 
     for i in range(num_items):
         # choose random spot for this item
@@ -398,27 +533,39 @@ def place_objects(room):
 
         # only place it if the tile is not blocked
         if not is_blocked(x, y):
-            dice = randint(0, 100)
-            if dice < 70:
-                # create a healing potion (70% chance)
+            choice = random_choice(item_chances)
+            if choice == 'heal':
+                # create a healing potion
                 item_component = Item(use_function=cast_heal)
                 item = GameObject(x, y, '+', 'healing potion',
                                   roguecolors.red, item=item_component)
-            elif dice < 70 + 10:
-                # create a lightning bolt scroll (10% chance)
+            elif choice == 'lightning':
+                # create a lightning bolt scroll
                 item_component = Item(use_function=cast_lightning)
                 item = GameObject(x, y, '#', 'scroll of lightning bolt',
                                   roguecolors.light_yellow, item=item_component)
-            elif dice < 70 + 10 + 10:
-                # create a fireball scroll (10% chance)
+            elif choice == 'fireball':
+                # create a fireball scroll
                 item_component = Item(use_function=cast_fireball)
                 item = GameObject(x, y, '#', 'scroll of fireball',
                                   roguecolors.light_yellow, item=item_component)
-            else:
-                # create a confuse scroll (10% chance)
+            elif choice == 'confuse':
+                # create a confuse scroll
                 item_component = Item(use_function=cast_confuse)
                 item = GameObject(x, y, '#', 'scroll of confusion',
                                   roguecolors.light_yellow, item=item_component)
+            elif choice == 'sword':
+                # create a sword
+                equipment_component = Equipment(slot='right hand', power_bonus=3)
+                item = GameObject(x, y, '/', 'sword', roguecolors.sky,
+                                  equipment=equipment_component)
+            elif choice == 'shield':
+                # create a shield
+                equipment_component = Equipment(slot='left hand', defense_bonus=1)
+                item = GameObject(x, y, '[', 'shield', roguecolors.darker_orange,
+                                  equipment=equipment_component)
+            else:
+                pass
 
             objects.append(item)
             item.send_to_background()  # items appear below other objects
@@ -470,7 +617,10 @@ def is_visible_tile(x, y):
 
 def make_map():
     """ """
-    global my_map
+    global my_map, objects, stairs
+
+    # the list of objects with just the player
+    objects = [player]
 
     # fill map with blocked (True) tiles, using comprehension list
     my_map = [[Tile(True)
@@ -512,7 +662,8 @@ def make_map():
             number = chr(65 + num_rooms)
             room_name = GameObject(new_x, new_y, number,
                                    roomnumber, roguecolors.gold,
-                                   blocks=False, fighter=None, ai=None)
+                                   always_visible=True, blocks=False,
+                                   fighter=None, ai=None)
             # draw early, so everything else is drawn on top
             objects.insert(0, room_name)
 
@@ -544,11 +695,47 @@ def make_map():
             rooms.append(new_room)
             num_rooms += 1
 
+    # create stairs at the center of the last room
+    stairs = GameObject(new_x + 1, new_y, '<', 'stairs',
+                        roguecolors.white, always_visible=True)
+    objects.append(stairs)
+    stairs.send_to_background()  # so it's drawn below the monsters
+
+
+def random_choice_index(chances):
+    """
+        choose one option from list of chances, returning its index
+        the dice will land on some number between 1 and the sum of the
+        chances
+    """
+    dice = randint(1, sum(chances))
+
+    # go through all chances, keeping the sum so far
+    running_sum = 0
+    choice = 0
+    for w in chances:
+        running_sum += w
+
+        # see if the dice landed in the part that corresponds to this choice
+        if dice <= running_sum:
+            return choice
+        choice += 1
+
+
+def random_choice(chances_dict):
+    """
+        choose one option from dictionary of chances, returning its key
+    """
+    chances = list(chances_dict.values())
+    strings = list(chances_dict.keys())
+
+    idefix = random_choice_index(chances)
+    return strings[idefix]
+
 
 def render_all():
     """ """
-    global fov_recompute
-    global visible_tiles
+    global fov_recompute, visible_tiles
 
     if fov_recompute:
         fov_recompute = False
@@ -565,7 +752,7 @@ def render_all():
             wall = my_map[x][y].block_sight
             if not visible:
                 # if it's not visible right now, the player can only see
-                # it if it's explored
+                # it if it's been explored
                 if my_map[x][y].explored:
                     # we're out of player's fov
                     if wall:
@@ -597,14 +784,22 @@ def render_all():
         panel.draw_str(MSG_X, y, line, bg=None, fg=color)
         y += 1
 
-    # display names of objects under the mouse
-    panel.draw_str(1, 0, get_names_under_mouse(), bg=None,
+    # display the dungeon level
+    panel.draw_str(1, 0, 'Level: -' + str(dungeon_level), bg=None,
                    fg=roguecolors.white)
 
     # show the player's stats
     render_bar(1, 1, BAR_WIDTH, 'Health', player.fighter.hp,
                player.fighter.max_hp, roguecolors.light_red,
                roguecolors.darker_red)
+
+    joliestring = 'XP: ' + str(player.fighter.xp) + ', lvl: ' + str(player.level)
+    panel.draw_str(1, 2, joliestring,
+                   bg=None, fg=roguecolors.light_green)
+
+    # last, display names of objects under the mouse
+    panel.draw_str(1, PANEL_HEIGHT - 1, get_names_under_mouse(), bg=None,
+                   fg=roguecolors.white)
 
     # blit the contents of "panel" to the root console
     root.blit(panel, 0, PANEL_Y, SCREEN_WIDTH, PANEL_HEIGHT, 0, 0)
@@ -624,7 +819,7 @@ def player_move_or_attack(dx, dy):
     # try to find an attackable object there
     target = None
     for obj in objects:
-        if obj.fighter and obj.x == x and obj.y == y:
+        if obj.fighter and obj.x == x and obj.y == y and obj != player:
             target = obj
             break
 
@@ -647,6 +842,8 @@ def menu(header, options, width):
     for header_line in header.splitlines():
         header_wrapped.extend(textwrap.wrap(header_line, width))
     header_height = len(header_wrapped)
+    if header == '':
+        header_height = 0
     height = len(options) + header_height
 
     # create an off-screen console that represents the menu's window
@@ -679,6 +876,9 @@ def menu(header, options, width):
     if key_char == '':
         key_char = ' '  # placeholder
 
+    if key.key == 'ENTER' and key.alt:  # Alt+Enter: toggle fullscreen
+        tdl.set_fullscreen(not tdl.get_fullscreen())
+
     # convert the ASCII code to an index; if it corresponds to an
     # option, return it
     index = ord(key_char) - ord('a')
@@ -694,7 +894,14 @@ def inventory_menu(header):
     if len(inventory) == 0:
         options = ['Inventory is empty.']
     else:
-        options = [item.name for item in inventory]
+        # options = [item.name for item in inventory]
+        options = []
+        for item in inventory:
+            text = item.name
+            # show additional information, in case it's equipped
+            if item.equipment and item.equipment.is_equipped:
+                text = text + ' (on ' + item.equipment.slot + ')'
+            options.append(text)
 
     index = menu(header, options, INVENTORY_WIDTH)
 
@@ -702,6 +909,13 @@ def inventory_menu(header):
     if index is None or len(inventory) == 0:
         return None
     return inventory[index].item
+
+
+def msgbox(text, width=50):
+    """
+        use menu() as a sort of "message box"
+    """
+    menu(text, [], width)
 
 
 def handle_keys():
@@ -741,6 +955,10 @@ def handle_keys():
         elif user_input.key == 'RIGHT':
             player_move_or_attack(1, 0)
 
+        elif user_input.text == 'w':
+            # just wait
+            pass
+
         else:
             # test for other keys
             if user_input.text == 'g':
@@ -762,6 +980,23 @@ def handle_keys():
                                              'drop it, or any other to cancel.\n')
                 if chosen_item is not None:
                     chosen_item.drop()
+
+            if user_input.text == '<':
+                # go down stairs, if the player is on them
+                if stairs.x == player.x and stairs.y == player.y:
+                    next_level()
+
+            if user_input.text == 'x':
+                # show player information
+                level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR
+                msgbox('Informations' +
+                       '\nPlayer level: ' + str(player.level) +
+                       '\nExperience: ' + str(player.fighter.xp) +
+                       '\nExperience to level up: ' + str(level_up_xp) +
+                       '\n\nMaximum HP: ' + str(player.fighter.max_hp) +
+                       '\nAttack: ' + str(player.fighter.power) +
+                       '\nDefense: ' + str(player.fighter.defense),
+                       CHARACTER_SCREEN_WIDTH)
 
             return 'didnt-take-turn'
 
@@ -801,6 +1036,41 @@ def message(new_msg, color=roguecolors.black):
 
         # add the new line as a tuple, with the text and the color
         game_msgs.append((line, color))
+
+
+def from_dungeon_level(table):
+    """
+        returns a value that depends on level. the table specifies what
+        value occurs after each level, default is 0.
+    """
+    for (level, value) in reversed(table):
+        if dungeon_level >= level:
+            return value
+    return 0
+
+
+def get_all_equipped(obj):
+    """
+        returns a list of equipped items
+    """
+    if obj == player:
+        equipped_list = []
+        for item in inventory:
+            if item.equipment and item.equipment.is_equipped:
+                equipped_list.append(item.equipment)
+        return equipped_list
+    else:
+        return []  # other objects have no equipment, for now
+
+
+def get_equipped_in_slot(slot):
+    """
+        returns the equipment in a slot, or None if it's empty
+    """
+    for obj in inventory:
+        if obj.equipment and obj.equipment.slot == slot and obj.equipment.is_equipped:
+            return obj.equipment
+    return None
 
 
 def get_names_under_mouse():
@@ -853,17 +1123,17 @@ def cast_confuse():
     """
         find closest enemy in-range and confuse it
     """
-    # monster = closest_monster(CONFUSE_RANGE)
-    # if monster is None:  # no enemy found within maximum range
-    #    message('No enemy is close enough to confuse.', roguecolors.red)
-    #    return 'cancelled'
-    # ask the player for a target to confuse
-    message('Left-click an enemy to confuse it, or right-click to cancel.',
-            roguecolors.light_cyan)
-    monster = target_monster(CONFUSE_RANGE)
-    if monster is None:
-        message('Cancelled')
+    monster = closest_monster(CONFUSE_RANGE)
+    if monster is None:  # no enemy found within maximum range
+        message('No enemy is close enough to confuse.', roguecolors.red)
         return 'cancelled'
+    # ask the player for a target to confuse
+    # message('Left-click an enemy to confuse it, or right-click to cancel.',
+    #        roguecolors.light_cyan)
+    # monster = target_monster(CONFUSE_RANGE)
+    # if monster is None:
+    #    message('Cancelled')
+    #    return 'cancelled'
 
     # replace the monster's AI with a "confused" one; after some turns
     # it will restore the old AI
@@ -889,14 +1159,23 @@ def cast_fireball():
             str(FIREBALL_RADIUS) + ' tiles!', roguecolors.orange)
 
     for obj in objects:
-        # damage every fighter in range, except the player
-        # if obj.distance(x, y) <= FIREBALL_RADIUS and obj.fighter and obj != player:
-
         # damage every fighter in range, including the player
-        if obj.distance(x, y) <= FIREBALL_RADIUS and obj.fighter:
+        # if obj.distance(x, y) <= FIREBALL_RADIUS and obj.fighter:
+        # or damage every fighter in range, except the player
+        if obj.distance(x, y) <= FIREBALL_RADIUS and obj.fighter and obj != player:
             message('The ' + obj.name + ' gets burned for ' +
                     str(FIREBALL_DAMAGE) + ' hit points.', roguecolors.orange)
             obj.fighter.take_damage(FIREBALL_DAMAGE)
+
+    # or don't ask
+    # monster = closest_monster(FIREBALL_RADIUS)
+    # if monster is None:  # no enemy found within maximum range
+    #    message('No enemy is close enough for the fireball.', roguecolors.red)
+    #    return 'cancelled'
+    # message('The fireball explodes to ' + monster.name +
+    #        ', burning it! The damage is ' +
+    #        str(FIREBALL_DAMAGE) + ' hit points.', roguecolors.orange)
+    # monster.fighter.take_damage(FIREBALL_DAMAGE)
 
 
 def closest_monster(max_range):
@@ -907,7 +1186,7 @@ def closest_monster(max_range):
     closest_dist = max_range + 1  # start with (slightly more than) maximum range
 
     for obj in objects:
-        if obj.fighter and not obj == player and (obj.x, obj.y) in visible_tiles:
+        if obj.fighter and obj != player and (obj.x, obj.y) in visible_tiles:
             # calculate distance between this object and the player
             dist = player.distance_to(obj)
             if dist < closest_dist:  # it's closer, so remember it
@@ -935,8 +1214,13 @@ def target_tile(max_range=None):
                 return (None, None)
         render_all()
 
-    if clicked:
-        return mouse_coord
+        # accept the target if the player clicked in FOV, and in case
+        # a range is specified, if it's in that range
+        x = mouse_coord[0]
+        y = mouse_coord[1]
+        if (clicked and mouse_coord in visible_tiles and
+           (max_range is None or player.distance(x, y) <= max_range)):
+            return mouse_coord
 
 
 def target_monster(max_range=None):
@@ -955,59 +1239,214 @@ def target_monster(max_range=None):
                 return obj
 
 
+def new_game():
+    """ """
+    global player, inventory, game_msgs, game_state, dungeon_level
+
+    dungeon_level = 1
+
+    # create object representing the player
+    fighter_component = Fighter(hp=100, defense=1, power=4, xp=0,
+                                death_function=player_death)
+    player = GameObject(0, 0, '@', 'player', roguecolors.white, blocks=True,
+                        fighter=fighter_component)
+    player.level = 1
+
+    # generate map (at this point it's not drawn to the screen)
+    make_map()
+
+    game_state = 'playing'
+    inventory = []
+
+    # create the list of game messages and their colors, starts empty
+    game_msgs = []
+
+    # a warm welcoming message!
+    message('Welcome stranger! Prepare to perish in the Catacombs of the Ancients.',
+            roguecolors.black)
+
+    # initial equipment: a dagger
+    equipment_component = Equipment(slot='right hand', power_bonus=1)
+    obj = GameObject(0, 0, '-', 'dagger', roguecolors.sky,
+                     equipment=equipment_component)
+    inventory.append(obj)
+    equipment_component.equip()
+    obj.always_visible = True
+
+
+def play_game():
+    """
+        Main loop
+    """
+    global mouse_coord, fov_recompute
+
+    player_action = None
+    mouse_coord = (0, 0)
+    fov_recompute = True
+    # unexplored areas start black (which is the default background color)
+    con.clear()
+
+    while not tdl.event.is_window_closed():
+        # draw all objects in the list
+        render_all()
+        tdl.flush()
+
+        # erase all objects at their old locations, before they move
+        for obj in objects:
+            obj.clear()
+
+        # handle keys and exit game if needed
+        player_action = handle_keys()
+        if player_action == 'exit':
+            save_game()
+            break
+
+        # let monsters take their turn
+        if game_state == 'playing' and player_action != 'didnt-take-turn':
+            for obj in objects:
+                if obj != player:
+                    if obj.ai:
+                        obj.ai.take_turn()
+
+
+def main_menu():
+    """
+        Show the menu, with a background image
+    """
+    img = image_load('menu_background1.png')
+
+    while not tdl.event.is_window_closed():
+        # show the background image, at twice the regular console resolution
+        img.blit_2x(root, 0, 0)
+
+        # show the game's title, and some credits
+        title = 'Catacombs of the Ancients'
+        center = (SCREEN_WIDTH - len(title)) // 2
+        root.draw_str(center, SCREEN_HEIGHT // 2 - 4, title, bg=None,
+                      fg=roguecolors.light_yellow)
+
+        title = 'By Jotaf'
+        center = (SCREEN_WIDTH - len(title)) // 2
+        root.draw_str(center, SCREEN_HEIGHT - 2, title, bg=None,
+                      fg=roguecolors.light_yellow)
+
+        # show options and wait for player's choice
+        choice = menu('', ['Play a new game', 'Continue last game', 'Quit'], 24)
+
+        if choice == 0:  # new game
+            new_game()
+            play_game()
+        if choice == 1:  # load last game
+            try:
+                load_game()
+            except:
+                msgbox('\n No previous game to load.\n')
+                continue
+            play_game()
+        elif choice == 2:  # quit
+            break
+
+
+def load_game():
+    """
+        open the previously saved shelve and load the game data
+    """
+    global my_map, objects, player, inventory, game_msgs, game_state, stairs, dungeon_level
+
+    with shelve.open('savegame', 'r') as savefile:
+        my_map = savefile['my_map']
+        objects = savefile['objects']
+        # get index of player in objects list and access it
+        player = objects[savefile['player_index']]
+        inventory = savefile['inventory']
+        game_msgs = savefile['game_msgs']
+        game_state = savefile['game_state']
+        stairs = objects[savefile['stairs_index']]
+        dungeon_level = savefile['dungeon_level']
+
+
+def save_game():
+    """
+        open a new empty shelve (possibly overwriting an old one) to
+        write the game data
+    """
+    with shelve.open('savegame', 'n') as savefile:
+        savefile['my_map'] = my_map
+        savefile['objects'] = objects
+        # index of player in objects list, instead of player's own ref
+        savefile['player_index'] = objects.index(player)
+        savefile['inventory'] = inventory
+        savefile['game_msgs'] = game_msgs
+        savefile['game_state'] = game_state
+        savefile['stairs_index'] = objects.index(stairs)
+        savefile['dungeon_level'] = dungeon_level
+
+        savefile.close()
+
+
+def next_level():
+    """
+        advance to the next level
+    """
+    global dungeon_level, fov_recompute
+
+    message('You take a moment to rest, and recover your strength.',
+            roguecolors.black)
+    player.fighter.heal(player.fighter.max_hp / 2)  # heal the player by 50%
+
+    check_level_up()
+
+    message('After this rare moment of peace, you descend deeper into the ' +
+            'heart of the catacombs...', roguecolors.black)
+
+    dungeon_level += 1
+    make_map()  # create a fresh new level!
+    fov_recompute = True
+    message('Welcome to level -' + str(dungeon_level), roguecolors.black)
+    play_game()
+    # render_all()
+
+
+def check_level_up():
+    """
+        see if the player's experience is enough to level-up
+    """
+    level_up_xp = LEVEL_UP_BASE + player.level * LEVEL_UP_FACTOR
+    if player.fighter.xp >= level_up_xp:
+        # it is! level up
+        player.level += 1
+        player.fighter.xp -= level_up_xp
+        message('Your battle skills grow stronger! You reached level ' +
+                str(player.level) + '!', roguecolors.yellow)
+
+        choice = None
+        while choice is None:  # keep asking until a choice is made
+            choice = menu('Level up! Choose a stat to raise:\n',
+                          ['Constitution (+20 HP, from ' +
+                           str(player.fighter.max_hp) + ')',
+                           'Strength (+1 attack, from ' +
+                           str(player.fighter.power) + ')',
+                           'Agility (+1 defense, from ' +
+                           str(player.fighter.defense) + ')'],
+                          LEVEL_SCREEN_WIDTH)
+
+        if choice == 0:
+            player.fighter.base_max_hp += 20
+            player.fighter.hp += 20
+        elif choice == 1:
+            player.fighter.base_power += 1
+        elif choice == 2:
+            player.fighter.base_defense += 1
+
+
 ##################################
 # GUI initialization & Main Loop #
 ##################################
 
 tdl.set_font('dundalk12x12_gs_tc.png', greyscale=True, altLayout=True)
 root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False)
-tdl.setFPS(LIMIT_FPS)
+tdl.set_fps(LIMIT_FPS)
 con = tdl.Console(MAP_WIDTH, MAP_HEIGHT)
 panel = tdl.Console(SCREEN_WIDTH, PANEL_HEIGHT)
 
-# create object representing the player
-fighter_component = Fighter(hp=30, defense=2, power=5,
-                            death_function=player_death)
-player = GameObject(0, 0, '@', 'player', roguecolors.white, blocks=True,
-                    fighter=fighter_component)
-
-objects = [player]
-inventory = []
-
-# generate map (at this point it's not drawn to the screen)
-make_map()
-
-fov_recompute = True
-game_state = 'playing'
-player_action = None
-
-# create the list of game messages and their colors, starts empty
-game_msgs = []
-
-# a warm welcoming message!
-message('Welcome stranger! Prepare to perish in the Catacombs of the Ancients.',
-        roguecolors.black)
-
-mouse_coord = (0, 0)
-
-while not tdl.event.is_window_closed():
-    # draw all objects in the list
-    render_all()
-
-    tdl.flush()
-
-    # erase all objects at their old locations, before they move
-    for obj in objects:
-        obj.clear()
-
-    # handle keys and exit game if needed
-    player_action = handle_keys()
-    if player_action == 'exit':
-        break
-
-    # let monsters take their turn
-    if game_state == 'playing' and player_action != 'didnt-take-turn':
-        for obj in objects:
-            if obj != player:
-                if obj.ai:
-                    obj.ai.take_turn()
+main_menu()

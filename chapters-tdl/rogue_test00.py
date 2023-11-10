@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test00.py 875 $
+# $Id: rogue_test00.py 876 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
