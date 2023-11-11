@@ -7,14 +7,16 @@ pyRogue
     :modified: 2021-05-28
 
 :status: tutorial, playable
-:version: $Id: README.rst 1.11 $
+:version: $Id: README.rst 1.12 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
-This is a little *Rogue-like* game, from following `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
+This is a little *Rogue-like* game, from following the old `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
-Warning: ``tdl module is now deprecated.``, need ``libffi-dev``, ``libsdl2-dev`` installed. 
+Updated to `new roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
 
-There's room for lots and lots of improvements. See TODO. Opensource licence, feel free to fork and PR back.
+Warning: '-tdl' parts won't work anymore, as ``tdl module is now deprecated.``, need ``libffi-dev``, ``libsdl2-dev`` installed. 
+
+There's room for lots and lots of improvements. See TODO. Opensource licence obviously, feel free to fork and PR back.
 
 Rogue Game:
 ===========
@@ -63,19 +65,4 @@ Code snippets. They were used to test code, from each tutorial's chapter.
 * dejavu10x10_gs_tc.png   <- font, as image
 * dundalk12x12_gs_tc.png  <- another font, also as image
 * menu_background1.png    <- image for the menu (from http://roguecentral.org/doryen )
-* roguecolors.py          <- color definitions
-* rogue_test00.py
-* rogue_test01.py
-* rogue_test02.2.py
-* rogue_test02.py
-* rogue_test03.py
-* rogue_test04.py
-* rogue_test05.py
-* rogue_test06.py
-* rogue_test07.py
-* rogue_test08.py
-* rogue_test09.py
-* rogue_test10.py
-* rogue_test11.py
-* rogue_test12.py
-* rogue_test13.py
+
