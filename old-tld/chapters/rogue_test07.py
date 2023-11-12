@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test06.py 895 $
+# $Id: rogue_test07.py 896 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
 """
-    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_6
+    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_7
+    GUI, status bar and mouse
 """
 
 import tdl
 from random import randint
 import math
+import textwrap
 import roguecolors
 
 # actual size of the window
@@ -20,7 +22,15 @@ SCREEN_HEIGHT = 50
 
 # size of the map
 MAP_WIDTH = 80
-MAP_HEIGHT = 45
+MAP_HEIGHT = 43
+
+# sizes and coordinates relevant for the GUI
+BAR_WIDTH = 20
+PANEL_HEIGHT = 7
+PANEL_Y = SCREEN_HEIGHT - PANEL_HEIGHT
+MSG_X = BAR_WIDTH + 2
+MSG_WIDTH = SCREEN_WIDTH - BAR_WIDTH - 2
+MSG_HEIGHT = PANEL_HEIGHT - 1
 
 # parameters for dungeon generator
 ROOM_MAX_SIZE = 10
@@ -33,8 +43,7 @@ FOV_ALGO = 'BASIC'
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
-REALTIME = False
-LIMIT_FPS = 20  # 20 frames-per-second maximum, for realtime mode
+LIMIT_FPS = 20  # 20 frames-per-second maximum
 
 color_dark_wall = roguecolors.darkest_grey
 color_light_wall = roguecolors.light_grey
@@ -70,12 +79,12 @@ class Fighter:
 
         if damage > 0:
             # make the target take some damage
-            print(self.owner.name.capitalize() + ' attacks ' +
-                  target.name + ' for ' + str(damage) + ' hit points.')
+            message(self.owner.name.capitalize() + ' attacks ' +
+                    target.name + ' for ' + str(damage) + ' hit points.')
             target.fighter.take_damage(damage)
         else:
-            print(self.owner.name.capitalize() + ' attacks ' +
-                  target.name + ' but it has no effect!')
+            message(self.owner.name.capitalize() + ' attacks ' +
+                    target.name + ' but it has no effect!')
 
 
 class BasicMonster:
@@ -94,8 +103,6 @@ class BasicMonster:
             # close enough, attack! (if the player is still alive.)
             elif player.fighter.hp > 0:
                 monster.fighter.attack(player)
-                # print('The attack of the ' + monster.name +
-                #       ' bounces off your shiny metal armor!')
 
 
 class Tile:
@@ -219,7 +226,7 @@ def player_death(player):
         the game ended!
     """
     global game_state
-    print('You died!')
+    message('You died!', roguecolors.red)
     game_state = 'dead'
 
     # for added effect, transform the player into a corpse!
@@ -232,7 +239,7 @@ def monster_death(monster):
         transform it into a nasty corpse! it doesn't block, can't be
         attacked and doesn't move
     """
-    print(monster.name.capitalize() + ' is dead!')
+    message(monster.name.capitalize() + ' is dead!', roguecolors.orange)
     monster.char = '%'
     monster.color = roguecolors.dark_red
     monster.blocks = False
@@ -374,11 +381,11 @@ def make_map():
             (new_x, new_y) = new_room.center()
             # optional: print "room number" to see how the map drawing
             # worked. We may have more than ten rooms, so use alphabet
-            # TODO: room name should'nt block
-            room_name = GameObject(new_x, new_y, chr(65 + num_rooms),
-                                   'name', roguecolors.gold,
+            roomnumber = 'Room number'
+            number = chr(65 + num_rooms)
+            room_name = GameObject(new_x, new_y, number,
+                                   roomnumber, roguecolors.gold,
                                    blocks=False, fighter=None, ai=None)
-            room_name.blocks = False
             # draw early, so everything else is drawn on top
             objects.insert(0, room_name)
 
@@ -454,9 +461,26 @@ def render_all():
             obj.draw()
     player.draw()
 
+    # prepare to render the GUI panel
+    panel.clear(fg=roguecolors.white, bg=roguecolors.dark_grey)
+
+    # print the game messages, one line at a time
+    y = 1
+    for (line, color) in game_msgs:
+        panel.draw_str(MSG_X, y, line, bg=None, fg=color)
+        y += 1
+
     # show the player's stats
-    con.draw_str(1, SCREEN_HEIGHT - 2, 'HP: ' + str(player.fighter.hp) +
-                 '/' + str(player.fighter.max_hp) + ' ')
+    render_bar(1, 1, BAR_WIDTH, 'Health', player.fighter.hp,
+               player.fighter.max_hp, roguecolors.light_red,
+               roguecolors.darker_red)
+
+    # display names of objects under the mouse
+    panel.draw_str(1, 0, get_names_under_mouse(), bg=None,
+                   fg=roguecolors.light_gray)
+
+    # blit the contents of "panel" to the root console
+    root.blit(panel, 0, PANEL_Y, SCREEN_WIDTH, PANEL_HEIGHT, 0, 0)
 
     # blit the contents of "con" to the root console and present it
     root.blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0)
@@ -480,8 +504,6 @@ def player_move_or_attack(dx, dy):
     # attack if target found, move otherwise
     if target is not None:
         player.fighter.attack(target)
-        # print('The ' + target.name + ' laughs at your puny efforts to
-        # attack him!')
     else:
         player.move(dx, dy)
         fov_recompute = True
@@ -490,18 +512,18 @@ def player_move_or_attack(dx, dy):
 def handle_keys():
     """ """
     global fov_recompute
+    global mouse_coord
 
-    if REALTIME:
-        keypress = False
-        for event in tdl.event.get():
-            if event.type == 'KEYDOWN':
-                user_input = event
-                keypress = True
-        if not keypress:
-            return
+    keypress = False
+    for event in tdl.event.get():
+        if event.type == 'KEYDOWN':
+            user_input = event
+            keypress = True
+        if event.type == 'MOUSEMOTION':
+            mouse_coord = event.cell
 
-    else:  # turn-based
-        user_input = tdl.event.key_wait()
+    if not keypress:
+        return 'didnt-take-turn'
 
     if user_input.key == 'ENTER' and user_input.alt:
         # Alt+Enter: toggle fullscreen
@@ -524,18 +546,77 @@ def handle_keys():
         elif user_input.key == 'RIGHT':
             player_move_or_attack(1, 0)
 
+        elif user_input.key == 'SPACE':
+            return 'didnt-take-turn'
+
         else:
             return 'didnt-take-turn'
 
 
-##############################
-# Initialization & Main Loop #
-##############################
+def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
+    """
+        render a bar (HP, experience, etc).
+    """
+    # first calculate the width of the bar
+    bar_width = int(float(value) / maximum * total_width)
+
+    # render the background first
+    panel.draw_rect(x, y, total_width, 1, None, bg=back_color)
+
+    # now render the bar on top
+    if bar_width > 0:
+        panel.draw_rect(x, y, bar_width, 1, None, bg=bar_color)
+
+    # finally, some centered text with the values
+    text = name + ': ' + str(value) + '/' + str(maximum)
+    x_centered = x + (total_width - len(text)) // 2
+    panel.draw_str(x_centered, y, text, fg=roguecolors.white, bg=None)
+
+
+def message(new_msg, color=roguecolors.black):
+    """
+        prepare and splitline the messages
+    """
+    # split the message if necessary, among multiple lines
+    new_msg_lines = textwrap.wrap(new_msg, MSG_WIDTH)
+
+    for line in new_msg_lines:
+        # if the buffer is full, remove the first line to make room for
+        # the new one
+        if len(game_msgs) == MSG_HEIGHT:
+            del game_msgs[0]
+
+        # add the new line as a tuple, with the text and the color
+        game_msgs.append((line, color))
+
+
+def get_names_under_mouse():
+    """
+        return a string with the names of all objects under the mouse
+    """
+    global visible_tiles
+
+    (x, y) = mouse_coord
+
+    # create a list with the names of all objects at the mouse's
+    # coordinates and in FOV, via comprehension list
+    names = [obj.name for obj in objects
+             if obj.x == x and obj.y == y and (obj.x, obj.y)
+             in visible_tiles]
+
+    names = ', '.join(names)  # join the names, separated by commas
+    return names.capitalize()
+
+
+##################################
+# GUI initialization & Main Loop #
+##################################
 
 tdl.set_font('dundalk12x12_gs_tc.png', greyscale=True, altLayout=True)
 root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False)
 tdl.setFPS(LIMIT_FPS)
-con = tdl.Console(SCREEN_WIDTH, SCREEN_HEIGHT)
+con = tdl.Console(MAP_WIDTH, MAP_HEIGHT)
+panel = tdl.Console(SCREEN_WIDTH, PANEL_HEIGHT)
 
 # create object representing the player
 fighter_component = Fighter(hp=30, defense=2, power=5,
@@ -551,6 +632,15 @@ make_map()
 fov_recompute = True
 game_state = 'playing'
 player_action = None
+
+# create the list of game messages and their colors, starts empty
+game_msgs = []
+
+# a warm welcoming message!
+message('Welcome stranger! Prepare to perish in the Catacombs of the Ancients.',
+        roguecolors.black)
+
+mouse_coord = (0, 0)
 
 while not tdl.event.is_window_closed():
     # draw all objects in the list

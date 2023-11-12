@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test05.py 895 $
+# $Id: rogue_test04.py 896 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
 """
-    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_5
-    http://roguecentral.org/doryen/data/libtcod/doc/1.5.1/html2/color.html?c=false&cpp=false&cs=false&py=true&lua=false
+    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_4
+    http://www.roguebasin.com/index.php?title=Comparative_study_of_field_of_view_algorithms_for_2D_grid_based_worlds
 """
 
 import tdl
 from random import randint
-import roguecolors
 
 # actual size of the window
 SCREEN_WIDTH = 80
@@ -26,7 +25,6 @@ MAP_HEIGHT = 45
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
-MAX_ROOM_MONSTERS = 3
 
 # FOV algorithm, can be BASIC, DIAMOND, SHADOW, PERMISSIVE0 to 9
 FOV_ALGO = 'BASIC'
@@ -36,10 +34,10 @@ TORCH_RADIUS = 10
 REALTIME = False
 LIMIT_FPS = 20  # 20 frames-per-second maximum, for realtime mode
 
-color_dark_wall = roguecolors.darkest_grey
-color_light_wall = roguecolors.light_grey
-color_dark_ground = roguecolors.darkest_sepia
-color_light_ground = roguecolors.dark_sepia
+color_dark_wall = (0, 0, 100)
+color_light_wall = (130, 110, 50)
+color_dark_ground = (50, 50, 150)
+color_light_ground = (200, 180, 50)
 
 
 class Tile:
@@ -83,20 +81,18 @@ class GameObject:
         this is a generic object: the player, a monster, an item, stairs...
         it's always represented by a character on screen.
     """
-    def __init__(self, x, y, char, name, color, blocks=False):
+    def __init__(self, x, y, char, color):
         """ """
         self.x = x
         self.y = y
         self.char = char
-        self.name = name
         self.color = color
-        self.blocks = blocks
 
     def move(self, dx, dy):
         """
             move by the given amount, if the destination is not blocked
         """
-        if not is_blocked(self.x + dx, self.y + dy):
+        if not my_map[self.x + dx][self.y + dy].blocked:
             self.x += dx
             self.y += dy
 
@@ -115,46 +111,6 @@ class GameObject:
             erase the character that represents this object
         """
         con.draw_char(self.x, self.y, ' ', self.color, bg=None)
-
-
-def is_blocked(x, y):
-    """ """
-    # first test the map tile
-    if my_map[x][y].blocked:
-        return True
-
-    # now check for any blocking objects
-    for obj in objects:
-        if obj.blocks and obj.x == x and obj.y == y:
-            return True
-        else:
-            return False
-
-
-def place_objects(room):
-    """ """
-    # choose random number of monsters
-    num_monsters = randint(0, MAX_ROOM_MONSTERS)
-
-    for i in range(num_monsters):
-        # choose random spot for this monster
-        x = randint(room.x1, room.x2)
-        y = randint(room.y1, room.y2)
-
-        # only place it if the tile is not blocked
-        if not is_blocked(x, y):
-            if randint(0, 100) < 80:  # 80% chance of getting an orc
-                # create an orc
-                monster = GameObject(x, y, 'o', 'orc',
-                                     roguecolors.desaturated_green,
-                                     blocks=True)
-            else:
-                # create a troll
-                monster = GameObject(x, y, 'T', 'troll',
-                                     roguecolors.darker_green,
-                                     blocks=True)
-
-            objects.append(monster)
 
 
 def create_room(room):
@@ -233,20 +189,17 @@ def make_map():
                 break
 
         if not failed:
-            # this means there are no intersections, so this room is
-            # valid, "paint" it to the map's tiles
+            # this means there are no intersections, so this room is valid
+            # "paint" it to the map's tiles
             create_room(new_room)
 
             # center coordinates of new room, will be useful later
             (new_x, new_y) = new_room.center()
-            # optional: print "room number" to see how the map drawing
-            # worked. We may have more than ten rooms, so use alphabet
-            # TODO: room name should'nt block
-            # room_name = GameObject(new_x, new_y, chr(65 + num_rooms),
-            #                       'name', roguecolors.gold,
-            #                       blocks=False)
+            # optional: print "room number" to see how the map drawing worked
+            # we may have more than ten rooms, so use alphabet
+            room_name = GameObject(new_x, new_y, chr(65 + num_rooms), (255, 255, 255))
             # draw early, so everything else is drawn on top
-            # objects.insert(0, room_name)
+            objects.insert(0, room_name)
 
             if num_rooms == 0:
                 # this is the first room, where the player starts at
@@ -268,9 +221,6 @@ def make_map():
                     # first move vertically, then horizontally
                     create_v_tunnel(prev_y, new_y, prev_x)
                     create_h_tunnel(prev_x, new_x, new_y)
-
-            # add some contents to this room, such as monsters
-            place_objects(new_room)
 
             # finally, append the new room to the list
             rooms.append(new_room)
@@ -321,34 +271,11 @@ def render_all():
     root.blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0)
 
 
-def player_move_or_attack(dx, dy):
+def handle_keys(realtime):
     """ """
     global fov_recompute
 
-    # the coordinates the player is moving to/attacking
-    x = player.x + dx
-    y = player.y + dy
-
-    # try to find an attackable object there
-    target = None
-    for obj in objects:
-        if obj.x == x and obj.y == y:
-            target = obj
-            break
-
-    # attack if target found, move otherwise
-    if target is not None:
-        print('The ' + target.name + ' laughs at your puny efforts to attack him!')
-    else:
-        player.move(dx, dy)
-        fov_recompute = True
-
-
-def handle_keys():
-    """ """
-    global fov_recompute
-
-    if REALTIME:
+    if realtime:
         keypress = False
         for event in tdl.event.get():
             if event.type == 'KEYDOWN':
@@ -365,24 +292,24 @@ def handle_keys():
         tdl.set_fullscreen(not tdl.get_fullscreen())
 
     elif user_input.key == 'ESCAPE':
-        return 'exit'  # exit game
+        return True  # exit game
 
-    if game_state == 'playing':
-        # movement keys
-        if user_input.key == 'UP':
-            player_move_or_attack(0, -1)
+    # movement keys
+    if user_input.key == 'UP':
+        player.move(0, -1)
+        fov_recompute = True
 
-        elif user_input.key == 'DOWN':
-            player_move_or_attack(0, 1)
+    elif user_input.key == 'DOWN':
+        player.move(0, 1)
+        fov_recompute = True
 
-        elif user_input.key == 'LEFT':
-            player_move_or_attack(-1, 0)
+    elif user_input.key == 'LEFT':
+        player.move(-1, 0)
+        fov_recompute = True
 
-        elif user_input.key == 'RIGHT':
-            player_move_or_attack(1, 0)
-
-        else:
-            return 'didnt-take-turn'
+    elif user_input.key == 'RIGHT':
+        player.move(1, 0)
+        fov_recompute = True
 
 
 ##############################
@@ -394,15 +321,13 @@ root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False
 tdl.setFPS(LIMIT_FPS)
 con = tdl.Console(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-player = GameObject(0, 0, '@', 'player', roguecolors.white, blocks=True)
+player = GameObject(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, '@', (255, 255, 255))
 objects = [player]
 
 # generate map (at this point it's not drawn to the screen)
 make_map()
 
 fov_recompute = True
-game_state = 'playing'
-player_action = None
 
 while not tdl.event.is_window_closed():
     # draw all objects in the list
@@ -415,13 +340,6 @@ while not tdl.event.is_window_closed():
         obj.clear()
 
     # handle keys and exit game if needed
-    player_action = handle_keys()
-    if player_action == 'exit':
+    exit_game = handle_keys(REALTIME)
+    if exit_game:
         break
-
-    # let monsters take their turn
-    if game_state == 'playing' and player_action != 'didnt-take-turn':
-        for obj in objects:
-            if obj != player:
-                pass
-                # print('The ' + obj.name + ' growls!')

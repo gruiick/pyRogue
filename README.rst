@@ -7,19 +7,25 @@ pyRogue
     :modified: 2021-05-28
 
 :status: tutorial, playable
-:version: $Id: README.rst 1.12 $
+:version: $Id: README.rst 1.13 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, from following the old `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
 Updated to `new roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
 
-Warning: '-tdl' parts won't work anymore, as ``tdl module is now deprecated.``, need ``libffi-dev``, ``libsdl2-dev`` installed. 
+.. NOTE::
+	
+	'old-tdl/' parts won't work anymore, as ``tdl module is now deprecated.``, need ``libffi-dev``, ``libsdl2-dev`` installed. 
 
 There's room for lots and lots of improvements. See TODO. Opensource licence obviously, feel free to fork and PR back.
 
 Rogue Game:
 ===========
+
+.. WARNING::
+	
+	NOT actually playable. It shouldn't crash althought.
 
 Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
 

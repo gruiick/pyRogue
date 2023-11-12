@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # coding: utf-8
 #
-# $Id: rogue_test11.py 895 $
+# $Id: rogue_test12.py 896 $
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
 """
-    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_11
-    Dungeon levels and character progression
+    from http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl,_part_12
+    Monster and item progression
 """
 
 import tdl
@@ -41,17 +41,15 @@ CHARACTER_SCREEN_WIDTH = 30
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
-MAX_ROOM_MONSTERS = 3
-MAX_ROOM_ITEMS = 2
 
 # spell values
-HEAL_AMOUNT = 15
+HEAL_AMOUNT = 40
 LIGHTNING_RANGE = 5
-LIGHTNING_DAMAGE = 20
+LIGHTNING_DAMAGE = 40
 CONFUSE_RANGE = 8
 CONFUSE_NUM_TURNS = 10
 FIREBALL_RADIUS = 3
-FIREBALL_DAMAGE = 12
+FIREBALL_DAMAGE = 25
 
 # experience and level-ups
 LEVEL_UP_BASE = 200
@@ -376,8 +374,16 @@ def is_blocked(x, y):
 
 def place_objects(room):
     """ """
+    # maximum number of monsters per room
+    max_monsters = from_dungeon_level([[2, 1], [3, 4], [5, 6]])
+
+    # chance of each monster
+    monster_chances = {}
+    monster_chances['orc'] = 80  # orc always shows up, even if all other monsters have 0 chance
+    monster_chances['troll'] = from_dungeon_level([[3, 15], [5, 30], [7, 60]])
+
     # choose random number of monsters
-    num_monsters = randint(0, MAX_ROOM_MONSTERS)
+    num_monsters = randint(0, max_monsters)
 
     for i in range(num_monsters):
         # choose random spot for this monster
@@ -386,29 +392,44 @@ def place_objects(room):
 
         # only place it if the tile is not blocked
         if not is_blocked(x, y):
-            if randint(0, 100) < 80:  # 80% chance of getting an orc
+            choice = random_choice(monster_chances)
+            if choice == 'orc':
                 # create an orc
-                fighter_component = Fighter(hp=1, defense=1, power=3, xp=35,
+                fighter_component = Fighter(hp=20, defense=0, power=4, xp=35,
                                             death_function=monster_death)
                 ai_component = BasicMonster()
                 monster = GameObject(x, y, 'o', 'orc',
                                      roguecolors.light_green,
                                      blocks=True, fighter=fighter_component,
                                      ai=ai_component)
-            else:
+            elif choice == 'troll':
                 # create a troll
-                fighter_component = Fighter(hp=1, defense=2, power=4, xp=80,
+                fighter_component = Fighter(hp=30, defense=2, power=8, xp=80,
                                             death_function=monster_death)
                 ai_component = BasicMonster()
                 monster = GameObject(x, y, 'T', 'troll',
                                      roguecolors.light_green,
                                      blocks=True, fighter=fighter_component,
                                      ai=ai_component)
+            else:
+                pass
 
             objects.append(monster)
 
+    # maximum number of items per room
+    max_items = from_dungeon_level([[1, 1], [4, 2]])
+
+    # chance of each item (by default they have a chance of 0 at
+    # level 1, which then goes up)
+    item_chances = {}
+    # healing potion always shows up, even if all other items have 0 chance
+    item_chances['heal'] = 35
+    item_chances['lightning'] = from_dungeon_level([[4, 25]])
+    item_chances['fireball'] = from_dungeon_level([[6, 25]])
+    item_chances['confuse'] = from_dungeon_level([[2, 10]])
+
     # choose random number of items
-    num_items = randint(0, MAX_ROOM_ITEMS)
+    num_items = randint(0, max_items)
 
     for i in range(num_items):
         # choose random spot for this item
@@ -417,27 +438,29 @@ def place_objects(room):
 
         # only place it if the tile is not blocked
         if not is_blocked(x, y):
-            dice = randint(0, 100)
-            if dice < 70:
-                # create a healing potion (70% chance)
+            choice = random_choice(item_chances)
+            if choice == 'heal':
+                # create a healing potion
                 item_component = Item(use_function=cast_heal)
                 item = GameObject(x, y, '+', 'healing potion',
                                   roguecolors.red, item=item_component)
-            elif dice < 70 + 10:
-                # create a lightning bolt scroll (10% chance)
+            elif choice == 'lightning':
+                # create a lightning bolt scroll
                 item_component = Item(use_function=cast_lightning)
                 item = GameObject(x, y, '#', 'scroll of lightning bolt',
                                   roguecolors.light_yellow, item=item_component)
-            elif dice < 70 + 10 + 10:
-                # create a fireball scroll (10% chance)
+            elif choice == 'fireball':
+                # create a fireball scroll
                 item_component = Item(use_function=cast_fireball)
                 item = GameObject(x, y, '#', 'scroll of fireball',
                                   roguecolors.light_yellow, item=item_component)
-            else:
-                # create a confuse scroll (10% chance)
+            elif choice == 'confuse':
+                # create a confuse scroll
                 item_component = Item(use_function=cast_confuse)
                 item = GameObject(x, y, '#', 'scroll of confusion',
                                   roguecolors.light_yellow, item=item_component)
+            else:
+                pass
 
             objects.append(item)
             item.send_to_background()  # items appear below other objects
@@ -574,6 +597,37 @@ def make_map():
     stairs.send_to_background()  # so it's drawn below the monsters
 
 
+def random_choice_index(chances):
+    """
+        choose one option from list of chances, returning its index
+        the dice will land on some number between 1 and the sum of the
+        chances
+    """
+    dice = randint(1, sum(chances))
+
+    # go through all chances, keeping the sum so far
+    running_sum = 0
+    choice = 0
+    for w in chances:
+        running_sum += w
+
+        # see if the dice landed in the part that corresponds to this choice
+        if dice <= running_sum:
+            return choice
+        choice += 1
+
+
+def random_choice(chances_dict):
+    """
+        choose one option from dictionary of chances, returning its key
+    """
+    chances = list(chances_dict.values())
+    strings = list(chances_dict.keys())
+
+    idefix = random_choice_index(chances)
+    return strings[idefix]
+
+
 def render_all():
     """ """
     global fov_recompute, visible_tiles
@@ -626,7 +680,7 @@ def render_all():
         y += 1
 
     # display the dungeon level
-    panel.draw_str(1, 0, 'Level: ' + str(dungeon_level), bg=None,
+    panel.draw_str(1, 0, 'Level: -' + str(dungeon_level), bg=None,
                    fg=roguecolors.white)
 
     # show the player's stats
@@ -634,8 +688,8 @@ def render_all():
                player.fighter.max_hp, roguecolors.light_red,
                roguecolors.darker_red)
 
-    poney = 'XP: ' + str(player.fighter.xp) + ', lvl: ' + str(player.level)
-    panel.draw_str(1, 2, poney,
+    joliestring = 'XP: ' + str(player.fighter.xp) + ', lvl: ' + str(player.level)
+    panel.draw_str(1, 2, joliestring,
                    bg=None, fg=roguecolors.light_green)
 
     # last, display names of objects under the mouse
@@ -872,6 +926,17 @@ def message(new_msg, color=roguecolors.black):
         game_msgs.append((line, color))
 
 
+def from_dungeon_level(table):
+    """
+        returns a value that depends on level. the table specifies what
+        value occurs after each level, default is 0.
+    """
+    for (level, value) in reversed(table):
+        if dungeon_level >= level:
+            return value
+    return 0
+
+
 def get_names_under_mouse():
     """
         return a string with the names of all objects under the mouse
@@ -1042,10 +1107,10 @@ def new_game():
     """ """
     global player, inventory, game_msgs, game_state, dungeon_level
 
-    dungeon_level = -1
+    dungeon_level = 1
 
     # create object representing the player
-    fighter_component = Fighter(hp=30, defense=2, power=5, xp=1,
+    fighter_component = Fighter(hp=100, defense=1, power=4, xp=0,
                                 death_function=player_death)
     player = GameObject(0, 0, '@', 'player', roguecolors.white, blocks=True,
                         fighter=fighter_component)
@@ -1182,18 +1247,18 @@ def next_level():
     global dungeon_level, fov_recompute
 
     message('You take a moment to rest, and recover your strength.',
-            roguecolors.light_violet)
+            roguecolors.black)
     player.fighter.heal(player.fighter.max_hp / 2)  # heal the player by 50%
 
     check_level_up()
 
     message('After this rare moment of peace, you descend deeper into the ' +
-            'heart of the catacombs...', roguecolors.red)
+            'heart of the catacombs...', roguecolors.black)
 
-    dungeon_level -= 1
+    dungeon_level += 1
     make_map()  # create a fresh new level!
     fov_recompute = True
-    message('Welcome to level ' + str(dungeon_level), roguecolors.black)
+    message('Welcome to level -' + str(dungeon_level), roguecolors.black)
     play_game()
     # render_all()
 
@@ -1236,7 +1301,8 @@ def check_level_up():
 
 tdl.set_font('dundalk12x12_gs_tc.png', greyscale=True, altLayout=True)
 root = tdl.init(SCREEN_WIDTH, SCREEN_HEIGHT, title="Roguelike", fullscreen=False)
-tdl.setFPS(LIMIT_FPS)
+# tdl.setFPS(LIMIT_FPS)  # deprecated
+tdl.set_fps(LIMIT_FPS)
 con = tdl.Console(MAP_WIDTH, MAP_HEIGHT)
 panel = tdl.Console(SCREEN_WIDTH, PANEL_HEIGHT)
 
