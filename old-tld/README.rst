@@ -4,24 +4,22 @@ pyRogue
 
 .. meta::
     :date: 2018-12-17
-    :modified: 2021-05-28
+    :modified: 2021-11-12
 
 :status: tutorial, playable
 :version: $Id: README.rst 1.14 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
-This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
+This is a little *Rogue-like* game, following the old `roguebasin.com <http://www.roguebasin.com/index.php?title=Roguelike_Tutorial,_using_python3%2Btdl>`_ python3 + tdl tutorial.
 
-There's room for lots and lots of improvements. See TODO. Opensource licence obviously, feel free to fork and PR back.
+Warning: 'old-tdl/' parts won't work anymore, as ``tdl module is now deprecated.``, need ``libffi-dev``, ``libsdl2-dev`` installed. 
+
+There's room for lots and lots of improvements. See TODO. Opensource licence obviously.
 
 Rogue Game:
 ===========
 
-.. WARNING::
-	
-	NOT actually playable. It shouldn't crash althought.
-
-Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
+Was playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
 
 It's a rogue game. You will die soon, or sooner. And you'll start all over again.
 
@@ -36,10 +34,9 @@ It's a rogue game. You will die soon, or sooner. And you'll start all over again
 
 Controls:
 
-* 'arrows' to move and attack (KeyPad and 'vi mode' also)
-* 'g': grab item
+* 'arrows' to move and attack (no diagonals)
+* 'g': grab thing
 * 'i': show inventory
-* 'v': show logs
 * 'x': show player's statistics
 * '<': go downstairs (one way, there is no turning back!)
 * 'ESC' to quit (or 'c' at main menu)
