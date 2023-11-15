@@ -43,6 +43,16 @@ When you're done, deactivate (exit) your virtual environment, simply with:
 
     deactivate
 
+Replace:
+========
+
+Some deprecated stuffs
+
+  * ``tcod.Console`` with ``tcod.console.Console``
+  * ``tcod.event.K_`` with ``tcod.event.KeySym.``
+
+
+
 
 Rogue Game:
 ===========

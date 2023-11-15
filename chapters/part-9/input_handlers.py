@@ -56,6 +56,11 @@ WAIT_KEYS = {
     tcod.event.KeySym.CLEAR,
     }
 
+CONFIRM_KEYS = {
+    tcod.event.KeySym.RETURN,
+    tcod.event.KeySym.KP_ENTER,
+    }
+
 
 class EventHandler(tcod.event.EventDispatch[Action]):
     def __init__(self, engine: Engine):
@@ -113,7 +118,7 @@ class AskUserEventHandler(EventHandler):
             tcod.event.KeySym.RCTRL,
             tcod.event.KeySym.LALT,
             tcod.event.KeySym.RALT,
-        }:
+            }:
             return None
         return self.on_exit()
 
