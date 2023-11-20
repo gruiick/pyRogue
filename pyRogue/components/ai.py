@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np  # type: ignore
+import random
 import tcod
 
 from actions import Action, BumpAction, MeleeAction, MovementAction, WaitAction
