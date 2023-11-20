@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Saved games (from pyRogue project)
+*.sav
+
 # C extensions
 *.so
 

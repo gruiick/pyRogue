@@ -7,7 +7,7 @@ pyRogue
     :modified: 2021-05-28
 
 :status: tutorial, playable
-:version: $Id: README.rst 1.15 $
+:version: $Id: README.rst 1.16 $
 :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
@@ -50,6 +50,8 @@ Some deprecated stuffs
 
   * ``tcod.Console`` with ``tcod.console.Console``
   * ``tcod.event.K_`` with ``tcod.event.KeySym.``
+  * ``console.tiles_rgb["bg"][x, y]`` with ``console.rgb["bg"][x, y]``
+  * constants: ``tcod.CENTER`` with ``tcod.libtcodpy.CENTER`` (for example)
 
 
 
