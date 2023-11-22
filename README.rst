@@ -4,11 +4,10 @@ pyRogue
 
 .. meta::
     :date: 2018-12-17
-    :modified: 2021-05-28
-
-:status: tutorial, playable
-:version: $Id: README.rst 1.16 $
-:licence: SPDX-License-Identifier: BSD-2-Clause
+    :modified: 2023-11-22
+    :status: tutorial, playable
+    :version: $Id: README.rst 1.16 $
+    :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
 
@@ -21,12 +20,16 @@ You'll need a python3 virtual env. Easiest way:
 
 .. code::bash
 
+.. github display on
+
     mkdir -p ~/python
     python3 -m venv ~/python
 
 Copy (or git clone) pyRogue/ into this directory, then:
 
 .. code::bash
+
+.. github display on
 
     source ~/python/bin/activate
     (python) gruiick@localhost:~/python/pyRogue$ python3 main.py
@@ -35,11 +38,15 @@ Install missing python modules:
 
 .. code::bash
 
+.. github display on
+
     (python) gruiick@localhost:~/python$ python3 -m pip install -r requirements.txt
 
 When you're done, deactivate (exit) your virtual environment, simply with:
 
 .. code::bash
+
+.. github display on
 
     deactivate
 
@@ -55,11 +62,11 @@ Some deprecated stuffs
 
 
 
-
 Rogue Game:
 ===========
 
 .. WARNING::
+
     NOT actually playable. It shouldn't crash althought.
 
 Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
