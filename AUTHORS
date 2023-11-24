@@ -1,4 +1,4 @@
-# $Id: AUTHORS 2 $
+# $Id: AUTHORS 3 $
 # SPDX-License-Identifier: BSD-2-Clause
 
 Original author(s) of the rogue game tutorial: 
@@ -6,6 +6,10 @@ Original author(s) of the rogue game tutorial:
     George Oliver
     Teddy Leach
     Weilian (u/weilian82)
+
+Original author(s) of the rogue tutorial v2 (aka python3 version):
+    Kyle Benesch (HexDecimal)
+    Tyler Standridge (TStand90)
 
 Authors of this version:
     GruiicK      <gruiick AT free.fr>

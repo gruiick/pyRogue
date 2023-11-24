@@ -1,3 +1,4 @@
 include LICENSE
+include pyRogue/dejavu10x10_gs_tc.png
 include pyRogue/dundalk12x12_gs_tc.png
-include pyRogue/menu_background1.png
+include pyRogue/menu_background.png

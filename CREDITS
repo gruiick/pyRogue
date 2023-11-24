@@ -1,4 +1,4 @@
-# $Id: CREDITS 3 $
+# $Id: CREDITS 4 $
 # SPDX-License-Identifier: BSD-2-Clause
 
 Credits for rogue tutorial(s) and game(s):
@@ -11,5 +11,6 @@ Credits for rogue tutorial(s) and game(s):
   https://bitbucket.org/libtcod/libtcod/wiki/Resources
   http://roguebase.net/
   https://blog.roguetemple.com/
+  https://github.com/TStand90/tcod_tutorial_v2
 
 * https://github.com/libtcod/python-tcod
