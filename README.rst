@@ -6,7 +6,7 @@ pyRogue
     :date: 2018-12-17
     :modified: 2023-11-22
     :status: tutorial, playable
-    :version: $Id: README.rst 1.17 $
+    :version: $Id: README.rst 1.18 $
     :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
@@ -87,8 +87,9 @@ Controls:
 * 'arrows' to move and attack (KeyPad and 'vi mode' also)
 * 'g': grab item
 * 'i': show inventory
+* 'd': drop item from inventory
 * 'v': show logs
-* 'x': show player's statistics **TODO**
+* 'c': show player's statistics
 * 'm': return to Main Menu **TODO**
 * '<': go downstairs (one way, there is no turning back!)
 * 'ESC' to quit (or 'q' at main menu)
