@@ -6,7 +6,7 @@ pyRogue
     :date: 2018-12-17
     :modified: 2023-11-22
     :status: tutorial, playable
-    :version: $Id: README.rst 1.19 $
+    :version: $Id: README.rst 1.20 $
     :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
@@ -110,9 +110,9 @@ Current state will be saved (savegame.sav), if you quit.
 What's in chapters:
 ===================
 
-Code snippets. They were used to test code, from each tutorial's chapter.
+Code snippets. They were used to test the code, from each tutorial's chapter.
 
 * dejavu10x10_gs_tc.png   <- font, as image
 * dundalk12x12_gs_tc.png  <- another font, also as image
-* menu_background1.png    <- image for the menu (from http://roguecentral.org/doryen )
+* menu_background.png    <- image for the menu (from http://roguecentral.org/doryen )
 
