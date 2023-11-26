@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from typing import Tuple
 
 import numpy as np  # type: ignore

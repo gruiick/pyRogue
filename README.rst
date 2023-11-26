@@ -6,7 +6,7 @@ pyRogue
     :date: 2018-12-17
     :modified: 2023-11-22
     :status: tutorial, playable
-    :version: $Id: README.rst 1.18 $
+    :version: $Id: README.rst 1.19 $
     :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
@@ -53,7 +53,7 @@ When you're done, deactivate (exit) your virtual environment, simply with:
 Replace:
 ========
 
-Some deprecated stuffs
+Some deprecated stuffs to replace:
 
   * ``tcod.Console`` with ``tcod.console.Console``
   * ``tcod.event.K_`` with ``tcod.event.KeySym.``
@@ -65,9 +65,7 @@ Some deprecated stuffs
 Rogue Game:
 ===========
 
-.. WARNING::
-
-    NOT actually playable. It shouldn't crash althought.
+Actually playable. It shouldn't crash althought.
 
 Playable and 'Fun'. Don't overthink: Flee, avoid, run away. Grab, use and try to survive as long as you can, on infinite levels...
 
@@ -77,8 +75,8 @@ It's a rogue game. You will die soon, or sooner. And you'll start all over again
 
 .. figure:: pyrogue_screenshot.png
    :alt: pyRogue screenshot (level 1)
-   :height: 641px
-   :width: 976px
+   :height: 529px
+   :width: 800px
    :align: center
 
 
@@ -102,7 +100,8 @@ Display:
 * '~": a scroll
 * 'o': an Orc
 * 'T': a Troll
-* '/': a sword **TODO**
+* '/': some sort of weapon (a dagger, a sword, ...)
+* '#': some sort of armoured clothing (leather, chain mail, ...)
 * '[': a shield **TODO**
 * '<': stairs, they go deeper...
 
