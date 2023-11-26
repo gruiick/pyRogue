@@ -68,20 +68,29 @@ fireball_scroll = Item(
     )
 
 dagger = Item(
-    char="/", color=(0, 191, 255), name="Dagger",
-    equippable=equippable.Dagger()
+    char="/",
+    color=(0, 191, 255),
+    name="Dagger",
+    equippable=equippable.Dagger(),
     )
 
 sword = Item(
-    char="/", color=(0, 191, 255), name="Sword",
-    equippable=equippable.Sword()
+    char="/",
+    color=(0, 191, 255),
+    name="Sword",
+    equippable=equippable.Sword(),
     )
 
 leather_armor = Item(
-    char="[", color=(139, 69, 19), name="Leather Armor",
+    char="[",
+    color=(139, 69, 19),
+    name="Leather Armor",
     equippable=equippable.LeatherArmor(),
     )
 
 chain_mail = Item(
-    char="[", color=(139, 69, 19), name="Chain Mail", equippable=equippable.ChainMail()
+    char="[",
+    color=(139, 69, 19),
+    name="Chain Mail",
+    equippable=equippable.ChainMail(),
     )

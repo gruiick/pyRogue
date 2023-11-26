@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import Optional, Tuple, TypeVar, TYPE_CHECKING, Union
+from typing import Optional, Tuple, TypeVar, Type, TYPE_CHECKING, Union
 
 from render_order import RenderOrder
 
@@ -37,7 +37,6 @@ class Entity:
         blocks_movement: bool = False,
         render_order: RenderOrder = RenderOrder.CORPSE,
         ):
-        """ (x, y), representation, color [R, G, B] """
         self.x = x
         self.y = y
         self.char = char
@@ -75,7 +74,7 @@ class Entity:
             gamemap.entities.add(self)
 
     def distance(self, x: int, y: int) -> float:
-        """ return the distance between current entity and given coordiantes (x, y) """
+        """ return the distance between current entity and given (x, y) coordinates """
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
     def move(self, dx: int, dy: int) -> None:
