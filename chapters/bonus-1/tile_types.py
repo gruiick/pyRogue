@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np  # type: ignore
 
-# Tile graphics structured type compatible with Console.tiles_rgb.
+# Tile graphics structured type compatible with Console.rgb.
 graphic_dt = np.dtype(
     [
         ("ch", np.int32),  # Unicode codepoint.
