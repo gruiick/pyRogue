@@ -5,10 +5,11 @@ from components.fighter import Fighter
 from components.inventory import Inventory
 from components.level import Level
 from entity import Actor, Item
+import color
 
 player = Actor(
     char="@",
-    color=(255, 255, 255),
+    color=color.white,
     name="Player",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
@@ -19,7 +20,7 @@ player = Actor(
 
 orc = Actor(
     char="o",
-    color=(63, 127, 63),
+    color=color.desaturated_green,
     name="Orc",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
@@ -30,7 +31,7 @@ orc = Actor(
 
 troll = Actor(
     char="T",
-    color=(0, 127, 0),
+    color=color.darker_green,
     name="Troll",
     ai_cls=HostileEnemy,
     equipment=Equipment(),
@@ -41,56 +42,56 @@ troll = Actor(
 
 health_potion = Item(
     char="!",
-    color=(127, 0, 255),
+    color=color.violet,
     name="Health Potion",
     consumable=consumable.HealingConsumable(amount=4),
     )
 
 lightning_scroll = Item(
     char="~",
-    color=(255, 255, 0),
+    color=color.yellow,
     name="Lightning Scroll",
     consumable=consumable.LightningDamageConsumable(damage=20, maximum_range=5),
     )
 
 confusion_scroll = Item(
     char="~",
-    color=(207, 63, 255),
+    color=color.intense_mauve,
     name="Confusion Scroll",
     consumable=consumable.ConfusionConsumable(number_of_turns=5),
     )
 
 fireball_scroll = Item(
     char="~",
-    color=(255, 0, 0),
+    color=color.red,
     name="Fireball Scroll",
     consumable=consumable.FireballDamageConsumable(damage=12, radius=3),
     )
 
 dagger = Item(
     char="/",
-    color=(0, 191, 255),
+    color=color.sky,
     name="Dagger",
     equippable=equippable.Dagger(),
     )
 
 sword = Item(
     char="/",
-    color=(0, 191, 255),
+    color=color.sky,
     name="Sword",
     equippable=equippable.Sword(),
     )
 
 leather_armor = Item(
     char="#",
-    color=(139, 69, 19),
+    color=color.brown,
     name="Leather Armor",
     equippable=equippable.LeatherArmor(),
     )
 
 chain_mail = Item(
     char="#",
-    color=(139, 69, 19),
+    color=color.brown,
     name="Chain Mail",
     equippable=equippable.ChainMail(),
     )
