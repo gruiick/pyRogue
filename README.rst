@@ -6,7 +6,7 @@ pyRogue
     :date: 2018-12-17
     :modified: 2023-11-22
     :status: tutorial, playable
-    :version: $Id: README.rst 1.20 $
+    :version: $Id: README.rst 1.21 $
     :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
@@ -53,13 +53,12 @@ When you're done, deactivate (exit) your virtual environment, simply with:
 Replace:
 ========
 
-Some deprecated stuffs to replace:
+If you follow the tutorial yourself, there's some deprecated stuffs to replace:
 
   * ``tcod.Console`` with ``tcod.console.Console``
   * ``tcod.event.K_`` with ``tcod.event.KeySym.``
   * ``console.tiles_rgb["bg"][x, y]`` with ``console.rgb["bg"][x, y]``
   * constants: ``tcod.CENTER`` with ``tcod.libtcodpy.CENTER`` (for example)
-
 
 
 Rogue Game:
