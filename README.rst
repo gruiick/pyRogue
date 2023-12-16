@@ -6,7 +6,7 @@ pyRogue
     :date: 2018-12-17
     :modified: 2023-11-22
     :status: tutorial, playable
-    :version: $Id: README.rst 1.21 $
+    :version: $Id: README.rst 1.22 $
     :licence: SPDX-License-Identifier: BSD-2-Clause
 
 This is a little *Rogue-like* game, following the `roguebasin python3 tutorial <http://rogueliketutorials.com/tutorials/tcod/v2/>`_.
@@ -88,20 +88,20 @@ Controls:
 * 'v': show logs
 * 'c': show player's statistics
 * 'm': return to Main Menu **TODO**
+* 'h': display Help Menu **TODO**
 * '<': go downstairs (one way, there is no turning back!)
 * 'ESC' to quit (or 'q' at main menu)
 
 Display:
 
 * '@': you
-* 'A': any capital letter is the name of the room **TODO**
 * '!': a potion
 * '~": a scroll
 * 'o': an Orc
 * 'T': a Troll
 * '/': some sort of weapon (a dagger, a sword, ...)
 * '#': some sort of armoured clothing (leather, chain mail, ...)
-* '[': a shield **TODO**
+* '[': a shield
 * '<': stairs, they go deeper...
 
 Current state will be saved (savegame.sav), if you quit.

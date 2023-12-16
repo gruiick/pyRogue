@@ -28,6 +28,7 @@ max_monsters_by_floor = [
 item_chances: Dict[int, List[Tuple[Entity, int]]] = {
     0: [(entity_factories.health_potion, 35)],
     2: [(entity_factories.confusion_scroll, 10)],
+    3: [(entity_factories.shield, 10)],
     4: [(entity_factories.lightning_scroll, 25), (entity_factories.sword, 5)],
     6: [(entity_factories.fireball_scroll, 25), (entity_factories.chain_mail, 15)],
     }
@@ -184,7 +185,7 @@ def generate_dungeon(
             continue  # This room intersects, so go to the next attempt.
         # If there are no intersections then the room is valid.
 
-        # Dig out this rooms inner area.
+        # Dig out this room inner area.
         dungeon.tiles[new_room.inner] = tile_types.floor
 
         if len(rooms) == 0:

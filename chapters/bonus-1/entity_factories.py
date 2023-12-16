@@ -95,3 +95,10 @@ chain_mail = Item(
     name="Chain Mail",
     equippable=equippable.ChainMail(),
     )
+
+shield = Item(
+    char="[",
+    color=color.darker_orange,
+    name="Shield",
+    equippable=equippable.Shield(),
+    )
